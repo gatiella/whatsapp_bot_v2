@@ -6,13 +6,7 @@ const MODELS = [
   'deepseek/deepseek-v4-flash:free',
 ];
 
-async function checkAutoReply(sock, msg, text, jid) {
-  const reply = getKeywordReply(text);
-  if (reply) {
-    await sock.sendMessage(jid, { text: reply });
-    return;
-  }
-
+async function getAIReply(text) {
   for (const model of MODELS) {
     try {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -31,11 +25,30 @@ async function checkAutoReply(sock, msg, text, jid) {
         }),
       });
       const data = await response.json();
-      const aiReply = data.choices?.[0]?.message?.content;
-      if (aiReply) {
-        await sock.sendMessage(jid, { text: aiReply });
-        return;
-      }
+      const reply = data.choices?.[0]?.message?.content;
+      if (reply) return reply;
+    } catch (_) {}
+  }
+  return null;
+}
+
+async function checkAutoReply(sock, msg, text, jid) {
+  const reply = getKeywordReply(text);
+  if (reply) {
+    await new Promise(r => setTimeout(r, 1000));
+    await sock.sendMessage(jid, { text: reply });
+    return;
+  }
+
+  const aiReply = await getAIReply(text);
+  if (!aiReply) return;
+
+  // Wait for session to stabilize then retry sending
+  for (let i = 0; i < 3; i++) {
+    try {
+      await new Promise(r => setTimeout(r, 2000 * (i + 1)));
+      await sock.sendMessage(jid, { text: aiReply });
+      return;
     } catch (_) {}
   }
 }
