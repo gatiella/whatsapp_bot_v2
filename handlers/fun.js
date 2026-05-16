@@ -132,22 +132,64 @@ const wouldYouRather = [
   "Would you rather never fight 🕊️ or always make up quickly 💋?",
 ];
 
-const horoscopes = {
-  aries: "♈ Bold moves pay off today. Your energy is magnetic — use it!",
-  taurus: "♉ Patience is your superpower. Financial luck improves this week.",
-  gemini: "♊ Communication is key. A conversation changes everything.",
-  cancer: "♋ Trust your gut. Home and family bring comfort today.",
-  leo: "♌ You're in the spotlight — own it. Creative projects shine.",
-  virgo: "♍ Details matter today. Your hard work is about to pay off.",
-  libra: "♎ Balance is restored. Relationships bloom under today's energy.",
-  scorpio: "♏ Transformation is near. Embrace change — it's working for you.",
-  sagittarius: "♐ Adventure calls. A new opportunity is closer than you think.",
-  capricorn: "♑ Discipline pays dividends. Stay the course — you're almost there.",
-  aquarius: "♒ Innovation sparks today. Your unique ideas will be noticed.",
-  pisces: "♓ Intuition is sharp. Creative and spiritual energy is high.",
-};
+const pickupLines = [
+  "Are you a parking ticket? Because you've got 'fine' written all over you. 😏",
+  "Do you believe in love at first text? 💬❤️",
+  "Are you Google? Because you have everything I've been searching for. 🔍",
+  "Is your name Wi-Fi? Because I'm feeling a connection. 📶",
+  "Are you a camera? Every time I look at you I smile. 📸",
+  "Do you have a name or can I call you mine? 😍",
+  "Are you a star? Because your beauty lights up the night. ⭐",
+  "I must be lost because heaven is a long way from here. 😇",
+  "Are you an alarm clock? Because you make my heart race every morning. ⏰",
+  "If you were a vegetable, you'd be a cute-cumber. 🥒😄",
+  "Are you a magnet? Because I'm attracted to you. 🧲",
+  "Can I follow you home? My parents always told me to follow my dreams. 💭",
+];
+
+const roastLines = [
+  "You're not stupid, you just have bad luck thinking. 🧠",
+  "I'd agree with you but then we'd both be wrong. 😂",
+  "You're like a cloud — when you disappear, it's a beautiful day. ☀️",
+  "You have your entire life to be an idiot. Why not take today off? 😴",
+  "I was going to roast you but my mom said I shouldn't burn trash. 🗑️🔥",
+  "You're proof that evolution can go in reverse. 🐒",
+  "I'd give you a nasty look but you already have one. 😬",
+  "Brains aren't everything. In your case they're nothing. 💭",
+  "You're like a software update — whenever I see you, I think 'not now'. 💻",
+  "Keep rolling your eyes, maybe you'll find a brain back there. 👀",
+];
+
+const loveAdvice = [
+  "Love is not about finding the perfect person, it's about seeing an imperfect person perfectly. 💕",
+  "The best relationship is one where you love each other more than you need each other. 💑",
+  "A great relationship is about two things: appreciating similarities and respecting differences. 🤝",
+  "Never stop doing the little things that matter. Those are the ones that matter most. 💌",
+  "Love is not just a feeling, it's a daily choice to put someone else first. 💝",
+  "The secret to a lasting relationship: laugh together, grow together, stay together. 😂🌱",
+  "Always choose love over pride. Your ego will never keep you warm at night. 🔥",
+  "A partner who makes you laugh is worth more than all the money in the world. 😂💰",
+];
+
+const shipNames = [
+  ["fire", "ice"], ["sun", "moon"], ["star", "sky"],
+  ["rose", "thorn"], ["day", "night"], ["storm", "calm"],
+];
 
 function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function generateShipName(name1, name2) {
+  const half1 = name1.slice(0, Math.ceil(name1.length / 2));
+  const half2 = name2.slice(Math.floor(name2.length / 2));
+  return half1 + half2;
+}
+
+function loveMeter(name1, name2) {
+  let score = 0;
+  const combined = (name1 + name2).toLowerCase();
+  for (let i = 0; i < combined.length; i++) score += combined.charCodeAt(i);
+  return (score % 100) + 1;
+}
 
 async function handleFun(sock, msg, cmd, args) {
   const jid = msg.key.remoteJid;
@@ -233,6 +275,42 @@ async function handleFun(sock, msg, cmd, args) {
       await sock.sendMessage(jid, { text: `🤔 *Would You Rather:*\n\n${rand(wouldYouRather)}` });
       break;
 
+    case 'pickup':
+      await sock.sendMessage(jid, { text: `💘 *Pickup Line:*\n\n${rand(pickupLines)}` });
+      break;
+
+    case 'roast': {
+      const target = args.join(' ') || 'you';
+      await sock.sendMessage(jid, { text: `🔥 *Roasting ${target}:*\n\n${rand(roastLines)}` });
+      break;
+    }
+
+    case 'loveadvice':
+      await sock.sendMessage(jid, { text: `💕 *Love Advice:*\n\n${rand(loveAdvice)}` });
+      break;
+
+    case 'lovemeter': {
+      const name1 = args[0] || 'you';
+      const name2 = args[1] || 'them';
+      const score = loveMeter(name1, name2);
+      const hearts = '❤️'.repeat(Math.floor(score / 10));
+      await sock.sendMessage(jid, {
+        text: `💕 *Love Meter*\n\n${name1} + ${name2}\n\n${hearts}\n\n*${score}% compatible!* ${score > 80 ? '🔥 Perfect match!' : score > 60 ? '💕 Great potential!' : score > 40 ? '🤔 Could work!' : '💔 Keep looking!'}`,
+      });
+      break;
+    }
+
+    case 'shipname': {
+      const name1 = args[0];
+      const name2 = args[1];
+      if (!name1 || !name2) { await sock.sendMessage(jid, { text: '❌ Usage: !shipname <name1> <name2>' }); return; }
+      const ship = generateShipName(name1, name2);
+      await sock.sendMessage(jid, {
+        text: `💑 *Ship Name for ${name1} & ${name2}:*\n\n*${ship.charAt(0).toUpperCase() + ship.slice(1)}* 💕`,
+      });
+      break;
+    }
+
     case 'spin': {
       const members = args.length ? args : ['Player 1', 'Player 2', 'Player 3'];
       const chosen = rand(members);
@@ -267,5 +345,20 @@ async function handleFun(sock, msg, cmd, args) {
       break;
   }
 }
+
+const horoscopes = {
+  aries: "♈ Bold moves pay off today. Your energy is magnetic — use it!",
+  taurus: "♉ Patience is your superpower. Financial luck improves this week.",
+  gemini: "♊ Communication is key. A conversation changes everything.",
+  cancer: "♋ Trust your gut. Home and family bring comfort today.",
+  leo: "♌ You're in the spotlight — own it. Creative projects shine.",
+  virgo: "♍ Details matter today. Your hard work is about to pay off.",
+  libra: "♎ Balance is restored. Relationships bloom under today's energy.",
+  scorpio: "♏ Transformation is near. Embrace change — it's working for you.",
+  sagittarius: "♐ Adventure calls. A new opportunity is closer than you think.",
+  capricorn: "♑ Discipline pays dividends. Stay the course — you're almost there.",
+  aquarius: "♒ Innovation sparks today. Your unique ideas will be noticed.",
+  pisces: "♓ Intuition is sharp. Creative and spiritual energy is high.",
+};
 
 module.exports = { handleFun };
