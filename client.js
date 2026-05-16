@@ -21,6 +21,9 @@ async function startBot() {
     auth: state,
     logger: pino({ level: 'silent' }),
     browser: ['Ubuntu', 'Chrome', '20.0.0'],
+    generateHighQualityLinkPreview: true,
+    getMessage: async () => ({ conversation: '' }),
+    shouldIgnoreJid: jid => jid.endsWith('@lid'),
   });
 
   let pairingCodeRequested = false;
@@ -60,7 +63,8 @@ async function startBot() {
     if (type !== 'notify') return;
     for (const msg of messages) {
       if (!msg.message) continue;
-      if (msg.key.fromMe && !msg.key.remoteJid.endsWith('@g.us')) continue;
+      if (msg.key.fromMe) continue;
+      if (msg.key.remoteJid.endsWith('@lid')) continue;
       try {
         await dispatchCommand(sock, msg);
       } catch (err) {

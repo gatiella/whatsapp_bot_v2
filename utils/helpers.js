@@ -1,5 +1,9 @@
 function getJID(msg) {
-  return msg.key.remoteJid;
+  const jid = msg.key.remoteJid;
+  if (jid && jid.endsWith('@lid')) {
+    return jid.replace('@lid', '@s.whatsapp.net');
+  }
+  return jid;
 }
 
 function getMessageText(msg) {
