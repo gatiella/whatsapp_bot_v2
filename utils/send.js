@@ -5,7 +5,7 @@ async function safeSend(sock, jid, content, retries = 3) {
       return;
     } catch (err) {
       if (i === retries - 1) throw err;
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 2000));
     }
   }
 }

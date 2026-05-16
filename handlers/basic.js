@@ -7,6 +7,8 @@ const startTime = Date.now();
 
 async function handleBasic(sock, msg, cmd, args) {
   const jid = getJID(msg);
+  const isGroup = jid.endsWith("@g.us");
+  if (!isGroup) await new Promise(r => setTimeout(r, 2000));
   const PREFIX = config.PREFIX;
 
   switch (cmd) {
