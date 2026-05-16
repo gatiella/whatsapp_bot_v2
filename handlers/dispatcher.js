@@ -9,7 +9,7 @@ const { handleProductivity } = require('./productivity');
 const { handleAdmin } = require('./admin');
 const { checkAutoReply } = require('../core/autoreply');
 const { checkAntiSpam } = require('../core/antispam');
-const { logMessage } = require('../db/database');
+const { logMessage, isBanned } = require('../db/database');
 const logger = require('../utils/logger');
 const config = require('../config');
 
@@ -20,11 +20,15 @@ async function dispatchCommand(sock, msg, store) {
   const text = getMessageText(msg);
   const isGroup = jid.endsWith('@g.us');
   const sender = msg.key.participant || msg.key.remoteJid;
+  const senderNumber = sender.replace(/[^0-9]/g, '');
 
   if (!text) return;
 
   // Log message to DB
   await logMessage(jid, sender, text);
+
+  // Block banned users
+  if (isBanned(senderNumber)) return;
 
   // Anti-spam check for groups
   if (isGroup) {

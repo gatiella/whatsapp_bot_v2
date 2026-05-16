@@ -1,5 +1,5 @@
 function getJID(msg) {
-  return msg.key.remoteJidAlt || msg.key.remoteJid;
+  return msg.key.remoteJid;
 }
 
 function getMessageText(msg) {
@@ -18,7 +18,7 @@ function getMentioned(msg) {
 
 async function react(sock, msg, emoji) {
   try {
-    await sock.sendMessage(msg.key.remoteJidAlt || msg.key.remoteJid, {
+    await sock.sendMessage(msg.key.remoteJid, {
       react: { text: emoji, key: msg.key },
     });
   } catch (_) {}
