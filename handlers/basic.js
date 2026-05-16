@@ -48,7 +48,9 @@ async function handleBasic(sock, msg, cmd, args) {
       });
       await new Promise(r => setTimeout(r, 500));
       await safeSend(sock, jid, {
-        text: `📋 *xssrat Bot — Commands (3/4)*\n\n*🎮 Fun*\n${PREFIX}joke, ${PREFIX}fact, ${PREFIX}trivia, ${PREFIX}riddle\n${PREFIX}8ball <q>, ${PREFIX}horoscope <sign>\n${PREFIX}truth, ${PREFIX}dare, ${PREFIX}spin, ${PREFIX}rps, ${PREFIX}coinflip\n\n*🌍 Info & Utils*\n${PREFIX}weather <city>, ${PREFIX}news <topic>\n${PREFIX}crypto <coin>, ${PREFIX}stock <sym>\n${PREFIX}define <word>, ${PREFIX}calc <expr>\n${PREFIX}qr <text>, ${PREFIX}password <len>, ${PREFIX}time <city>`,
+        text: `📋 *xssrat Bot — Commands (3/4)*\n\n*🎮 Fun*\n${PREFIX}joke, ${PREFIX}fact, ${PREFIX}trivia, ${PREFIX}riddle\n${PREFIX}8ball <q>, ${PREFIX}horoscope <sign>\n${PREFIX}truth, ${PREFIX}dare, ${PREFIX}spicydare
+${PREFIX}compliment, ${PREFIX}seduce, ${PREFIX}couple, ${PREFIX}wyr
+${PREFIX}spin, ${PREFIX}rps, ${PREFIX}coinflip\n\n*🌍 Info & Utils*\n${PREFIX}weather <city>, ${PREFIX}news <topic>\n${PREFIX}crypto <coin>, ${PREFIX}stock <sym>\n${PREFIX}define <word>, ${PREFIX}calc <expr>\n${PREFIX}qr <text>, ${PREFIX}password <len>, ${PREFIX}time <city>`,
       });
       await new Promise(r => setTimeout(r, 500));
       await safeSend(sock, jid, {
