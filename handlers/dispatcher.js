@@ -96,6 +96,12 @@ async function dispatchCommand(sock, msg, store) {
     } else if (['journal', 'myjournal', 'motivate', 'vent', 'affirmation', 'grammar', 'rewrite', 'emoji', 'summarizelink'].includes(cmd)) {
       await handlePersonal(sock, msg, cmd, args);
 
+    } else if (['autodelete'].includes(cmd)) {
+      const hours = parseFloat(args[0]) || 3;
+      const { scheduleDelete } = require('../core/autodelete');
+      await scheduleDelete(sock, msg, hours);
+      await sock.sendMessage(getJID(msg), { text: `⏱️ Message will auto-delete in ${hours}h if ignored.` });
+
     // Admin only
     } else if (['setprefix', 'setlang', 'setautoreply', 'ban', 'unban',
                 'addkeyword', 'delkeyword', 'keywords', 'logs'].includes(cmd)) {

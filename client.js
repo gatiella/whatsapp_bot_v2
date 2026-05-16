@@ -10,6 +10,7 @@ const { dispatchCommand } = require('./handlers/dispatcher');
 const { handleGroupJoin } = require('./handlers/group');
 const { runScheduler } = require('./core/scheduler');
 const { restoreSchedules } = require('./handlers/productivity');
+const { scheduleDelete, cancelDelete } = require('./core/autodelete');
 const logger = require('./utils/logger');
 
 async function startBot() {
@@ -61,6 +62,23 @@ async function startBot() {
     if (type !== 'notify') return;
     for (const msg of messages) {
       if (!msg.message) continue;
+
+      // Cancel autodelete if someone replied
+      if (msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+        const quotedId = msg.message.extendedTextMessage.contextInfo.stanzaId;
+        if (quotedId && cancelDelete(quotedId)) {
+          console.log('[AUTODELETE] Cancelled — message was replied to');
+        }
+      }
+
+      // Schedule autodelete for owner's outgoing DMs
+      if (msg.key.fromMe && !msg.key.remoteJid.endsWith('@g.us') && !msg.key.remoteJid.endsWith('@lid')) {
+        const hours = parseFloat(process.env.AUTODELETE_HOURS || '3');
+        if (process.env.AUTODELETE_ENABLED === 'true') {
+          scheduleDelete(sock, msg, hours);
+        }
+      }
+
       if (msg.key.fromMe && !msg.key.remoteJid.endsWith('@g.us') && !msg.key.remoteJid.endsWith('@lid')) continue;
       try {
         await dispatchCommand(sock, msg);
