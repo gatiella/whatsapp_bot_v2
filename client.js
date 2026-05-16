@@ -21,6 +21,7 @@ async function startBot() {
     auth: state,
     logger: pino({ level: 'silent' }),
     browser: ['Ubuntu', 'Chrome', '20.0.0'],
+    getMessage: async () => ({ conversation: '' }),
   });
 
   let pairingCodeRequested = false;
@@ -57,11 +58,10 @@ async function startBot() {
   sock.ev.on('creds.update', saveCreds);
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    console.log("[TYPE]", type, messages.length);
-    if (type !== "notify") return;
+    if (type !== 'notify') return;
     for (const msg of messages) {
-      if (!msg.message) { continue; }
-      if (msg.key.fromMe && !msg.key.remoteJid.endsWith("@g.us") && !msg.key.remoteJid.endsWith("@lid")) { continue; }
+      if (!msg.message) continue;
+      if (msg.key.fromMe && !msg.key.remoteJid.endsWith('@g.us') && !msg.key.remoteJid.endsWith('@lid')) continue;
       try {
         await dispatchCommand(sock, msg);
       } catch (err) {
