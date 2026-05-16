@@ -38,6 +38,16 @@ const truthQuestions = [
   "What's your biggest fear?",
   "Have you ever lied to get out of trouble?",
   "What's the worst gift you've ever received?",
+  "What's the most romantic thing you've ever done?",
+  "Have you ever had a crush on someone in this chat?",
+  "What's your biggest turn on?",
+  "Have you ever sent a risky text to the wrong person?",
+  "What's the naughtiest thought you've had today?",
+  "Have you ever kissed someone you shouldn't have?",
+  "What's your favorite body part on your partner?",
+  "Have you ever faked it?",
+  "What's the wildest place you've ever hooked up?",
+  "What's your biggest bedroom fantasy?",
 ];
 
 const dares = [
@@ -46,6 +56,80 @@ const dares = [
   "Send a selfie with the silliest face you can make.",
   "Text someone 'I know what you did' and share their reaction.",
   "Do 10 push-ups and send proof.",
+  "Send the last photo in your gallery right now.",
+  "Send a voice note saying 'I love you' in 5 different languages.",
+  "Send your most embarrassing selfie.",
+  "Text your crush 'hey' right now.",
+  "Send a screenshot of your last Google search.",
+  "Send a voice note of your best animal sound.",
+  "Text your mom a heart emoji right now.",
+];
+
+const spicyDares = [
+  "Send a flirty voice note to the last person you texted.",
+  "Describe your ideal romantic night in detail.",
+  "Send a voice note whispering something sweet.",
+  "Tell your partner one thing you've been too shy to say.",
+  "Send a voice note doing your most seductive voice.",
+  "Describe where you would kiss your partner first.",
+  "Send a compliment to someone you find attractive.",
+  "Tell your partner your favorite memory with them.",
+  "Whisper something naughty in a voice note.",
+  "Describe your partner in 3 words right now.",
+];
+
+const compliments = [
+  "You are the most beautiful person I have ever seen. 😍",
+  "Your smile makes the whole world brighter. ☀️",
+  "You are incredibly intelligent and amazing. 🧠✨",
+  "Being with you feels like home. 🏡❤️",
+  "You make every moment special just by being in it. 💫",
+  "Your laugh is literally my favorite sound in the world. 😂❤️",
+  "You are so incredibly kind and it melts my heart. 💝",
+  "You are the reason I smile for no reason. 😊",
+  "You are dangerously attractive and you don't even know it. 🔥",
+  "Everything about you is perfect. Simply perfect. 💯",
+];
+
+const seduceLines = [
+  "Are you a magician? Because whenever I look at you, everyone else disappears. ✨",
+  "Do you have a map? I keep getting lost in your eyes. 👀",
+  "Is it hot in here or is it just you? 🔥",
+  "You must be tired because you've been running through my mind all day. 😏",
+  "I was having a terrible day until I thought of you. 💭❤️",
+  "If kisses were snowflakes, I'd send you a blizzard. ❄️💋",
+  "You're not just beautiful, you're dangerously beautiful. 😈",
+  "Every time you smile at me I forget how to function. 😵‍💫",
+  "I don't need dreams when I have you. 🌙",
+  "The way you laugh makes me want to make you laugh forever. 😍",
+  "You're the type of person people write love songs about. 🎵",
+  "I can't stop thinking about you and honestly I don't want to. 💭",
+];
+
+const couplesChallenges = [
+  "📸 Take a cute selfie together and set it as your status.",
+  "💌 Write each other a 3-sentence love letter right now.",
+  "🎵 Send each other your current favorite song.",
+  "🍽️ Plan a surprise date for each other this week.",
+  "💆 Give each other a 5-minute massage.",
+  "📝 Write 5 things you love about each other.",
+  "🌅 Watch a sunrise or sunset together this week.",
+  "🍳 Cook a meal together from scratch.",
+  "📱 No phones for 1 hour — just each other.",
+  "💃 Dance together to your favorite song right now.",
+  "🎁 Surprise each other with a small gift under $5.",
+  "🗺️ Plan a mini adventure somewhere new together.",
+];
+
+const wouldYouRather = [
+  "Would you rather kiss in the rain 🌧️ or under the stars ⭐?",
+  "Would you rather have a long hug 🤗 or a quick kiss 💋?",
+  "Would you rather go on a beach date 🏖️ or a mountain hike 🏔️?",
+  "Would you rather receive flowers 🌹 or chocolates 🍫?",
+  "Would you rather stay in and cuddle 🛋️ or go out dancing 💃?",
+  "Would you rather know all your partner's thoughts 🧠 or have them always know yours?",
+  "Would you rather have a partner who's super funny 😂 or super romantic 💕?",
+  "Would you rather never fight 🕊️ or always make up quickly 💋?",
 ];
 
 const horoscopes = {
@@ -127,6 +211,26 @@ async function handleFun(sock, msg, cmd, args) {
 
     case 'dare':
       await sock.sendMessage(jid, { text: `🔥 *Dare:*\n\n${rand(dares)}` });
+      break;
+
+    case 'spicydare':
+      await sock.sendMessage(jid, { text: `🌶️ *Spicy Dare:*\n\n${rand(spicyDares)}` });
+      break;
+
+    case 'compliment':
+      await sock.sendMessage(jid, { text: `💝 *Compliment:*\n\n${rand(compliments)}` });
+      break;
+
+    case 'seduce':
+      await sock.sendMessage(jid, { text: `😏 *Flirt Line:*\n\n${rand(seduceLines)}` });
+      break;
+
+    case 'couple':
+      await sock.sendMessage(jid, { text: `👫 *Couple Challenge:*\n\n${rand(couplesChallenges)}` });
+      break;
+
+    case 'wyr':
+      await sock.sendMessage(jid, { text: `🤔 *Would You Rather:*\n\n${rand(wouldYouRather)}` });
       break;
 
     case 'spin': {

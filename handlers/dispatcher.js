@@ -70,7 +70,7 @@ async function dispatchCommand(sock, msg, store) {
 
     // Fun & games
     } else if (['joke', 'fact', 'trivia', 'riddle', '8ball', 'horoscope',
-                'truth', 'dare', 'spin', 'rps', 'coinflip'].includes(cmd)) {
+                'truth', 'dare', 'spicydare', 'compliment', 'seduce', 'couple', 'wyr', 'spin', 'rps', 'coinflip'].includes(cmd)) {
       await handleFun(sock, msg, cmd, args);
 
     // Info & utilities
