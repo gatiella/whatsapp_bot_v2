@@ -1,0 +1,2 @@
+// Debug - run once then remove
+console.log('Participants:', JSON.stringify(groupMeta.participants.slice(0,3), null, 2));

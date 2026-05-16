@@ -151,3 +151,21 @@ module.exports = {
   banUser, unbanUser, isBanned,
   getRecentLogs, getMessageStats, getStats,
 };
+
+function saveSchedule(id, jid, cronExpr, message) {
+  db.prepare('CREATE TABLE IF NOT EXISTS schedules (id TEXT PRIMARY KEY, jid TEXT, cron TEXT, message TEXT)').run();
+  db.prepare('INSERT OR REPLACE INTO schedules (id, jid, cron, message) VALUES (?, ?, ?, ?)').run(id, jid, cronExpr, message);
+}
+function listSchedules() {
+  try {
+    db.prepare('CREATE TABLE IF NOT EXISTS schedules (id TEXT PRIMARY KEY, jid TEXT, cron TEXT, message TEXT)').run();
+    return db.prepare('SELECT * FROM schedules').all();
+  } catch { return []; }
+}
+function deleteSchedule(id) {
+  db.prepare('DELETE FROM schedules WHERE id=?').run(id);
+}
+function deleteNote(sender, key) {
+  db.prepare('DELETE FROM notes WHERE sender=? AND key=?').run(sender, key);
+}
+module.exports = Object.assign(module.exports, { saveSchedule, listSchedules, deleteSchedule, deleteNote });

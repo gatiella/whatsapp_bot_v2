@@ -75,7 +75,7 @@ async function dispatchCommand(sock, msg, store) {
 
     // Productivity
     } else if (['remind', 'todo', 'note', 'notes', 'broadcast',
-                'schedule', 'stats'].includes(cmd)) {
+                'schedule', 'stats', 'autoreply'].includes(cmd)) {
       await handleProductivity(sock, msg, cmd, args);
 
     // Admin only
@@ -100,3 +100,4 @@ async function dispatchCommand(sock, msg, store) {
 }
 
 module.exports = { dispatchCommand };
+// Already loaded, just patch lock alias

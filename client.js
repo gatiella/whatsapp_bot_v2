@@ -9,6 +9,7 @@ const pino = require('pino');
 const { dispatchCommand } = require('./handlers/dispatcher');
 const { handleGroupJoin } = require('./handlers/group');
 const { runScheduler } = require('./core/scheduler');
+const { restoreSchedules } = require('./handlers/productivity');
 const logger = require('./utils/logger');
 
 async function startBot() {
@@ -27,14 +28,13 @@ async function startBot() {
   sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
     if (qr && !pairingCodeRequested && !sock.authState.creds.registered) {
       pairingCodeRequested = true;
-      // Wait 3 seconds before requesting
       await new Promise(r => setTimeout(r, 3000));
       try {
         const number = process.env.OWNER_NUMBER.replace(/[^0-9]/g, '');
-        console.log(`\nRequesting pairing code for: ${number}`);
+        console.log('\nRequesting pairing code for: ' + number);
         const code = await sock.requestPairingCode(number);
         console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log(`🔑 Pairing Code: ${code}`);
+        console.log('🔑 Pairing Code: ' + code);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('WhatsApp → Linked Devices → Link with phone number\n');
       } catch (err) {
@@ -49,6 +49,7 @@ async function startBot() {
     }
     if (connection === 'open') {
       logger.info('✅ xssrat bot connected!');
+      restoreSchedules(sock);
       runScheduler(sock);
     }
   });
@@ -59,7 +60,7 @@ async function startBot() {
     if (type !== 'notify') return;
     for (const msg of messages) {
       if (!msg.message) continue;
-      if (msg.key.fromMe && !msg.key.remoteJid.endsWith("@g.us")) continue;
+      if (msg.key.fromMe && !msg.key.remoteJid.endsWith('@g.us')) continue;
       try {
         await dispatchCommand(sock, msg);
       } catch (err) {
