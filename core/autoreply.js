@@ -1,14 +1,12 @@
 const { getKeywordReply } = require('../db/database');
 
 async function checkAutoReply(sock, msg, text, jid) {
-  // First check keywords
   const reply = getKeywordReply(text);
   if (reply) {
     await sock.sendMessage(jid, { text: reply });
     return;
   }
 
-  // Fall back to AI
   try {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -26,12 +24,13 @@ async function checkAutoReply(sock, msg, text, jid) {
       }),
     });
     const data = await response.json();
+    console.log('[AI]', JSON.stringify(data).slice(0, 200));
     const aiReply = data.choices?.[0]?.message?.content;
     if (aiReply) {
       await sock.sendMessage(jid, { text: aiReply });
     }
   } catch (err) {
-    // Silently fail if AI is unavailable
+    console.log('[AI ERROR]', err.message);
   }
 }
 
