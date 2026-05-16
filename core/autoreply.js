@@ -34,22 +34,19 @@ async function getAIReply(text) {
 
 async function checkAutoReply(sock, msg, text, jid) {
   const reply = getKeywordReply(text);
-  if (reply) {
-    await new Promise(r => setTimeout(r, 1000));
-    await sock.sendMessage(jid, { text: reply });
-    return;
-  }
+  const finalReply = reply || await getAIReply(text);
+  if (!finalReply) return;
 
-  const aiReply = await getAIReply(text);
-  if (!aiReply) return;
-
-  // Wait for session to stabilize then retry sending
-  for (let i = 0; i < 3; i++) {
+  // Try sending with increasing delays
+  for (let i = 0; i < 5; i++) {
     try {
-      await new Promise(r => setTimeout(r, 2000 * (i + 1)));
-      await sock.sendMessage(jid, { text: aiReply });
+      await new Promise(r => setTimeout(r, 3000 * (i + 1)));
+      await sock.sendMessage(jid, { text: finalReply });
+      console.log('[SENT] autoreply ok attempt', i + 1);
       return;
-    } catch (_) {}
+    } catch (err) {
+      console.log('[RETRY]', i + 1, err.message);
+    }
   }
 }
 
