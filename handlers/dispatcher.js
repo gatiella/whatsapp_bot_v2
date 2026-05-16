@@ -23,6 +23,7 @@ async function dispatchCommand(sock, msg, store) {
   const senderNumber = sender.replace(/[^0-9]/g, '');
 
   if (!text) return;
+  console.log("[DEBUG] msg from:", sender, "jid:", jid, "text:", text);
 
   // Log message to DB
   await logMessage(jid, sender, text);
