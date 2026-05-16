@@ -1,7 +1,8 @@
 function getJID(msg) {
   const jid = msg.key.remoteJid;
   if (jid && jid.endsWith('@lid')) {
-    return jid.replace('@lid', '@s.whatsapp.net');
+    const number = jid.replace('@lid', '');
+    return number + '@s.whatsapp.net';
   }
   return jid;
 }
