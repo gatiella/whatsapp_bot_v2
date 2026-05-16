@@ -65,7 +65,7 @@ async function dispatchCommand(sock, msg, store) {
 
     // AI features
     } else if (['ask', 'ai', 'summarize', 'translate', 'code',
-                'imagine', 'sentiment'].includes(cmd)) {
+                'imagine', 'sentiment', 'advice', 'story', 'poem', 'recipe', 'debate', 'roastai'].includes(cmd)) {
       await handleAI(sock, msg, cmd, args);
 
     // Fun & games
