@@ -70,7 +70,7 @@ async function handleFun(sock, msg, cmd, args) {
 
   switch (cmd) {
     case 'joke':
-      await sock.sendMessage(jid, { text: `😂 ${rand(jokes)}` });
+      try { await sock.sendMessage(jid, { text: `😂 ${rand(jokes)}` }); console.log("[SENT] joke ok"); } catch(e) { console.log("[FAIL] joke:", e.message); }
       break;
 
     case 'fact':

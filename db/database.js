@@ -2,17 +2,28 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const logger = require('../utils/logger');
 
-let db;
+const db = new Database(path.join(__dirname, 'bot.db'));
 
 function initDB() {
-  db = new Database(path.join(__dirname, 'bot.db'));
-  db.pragma('journal_mode = WAL');
-
   db.exec(`
     CREATE TABLE IF NOT EXISTS messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       jid TEXT, sender TEXT, text TEXT,
-      time TEXT DEFAULT (datetime('now'))
+      time DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS keywords (
+      keyword TEXT PRIMARY KEY, reply TEXT
+    );
+    CREATE TABLE IF NOT EXISTS banned (
+      number TEXT PRIMARY KEY
+    );
+    CREATE TABLE IF NOT EXISTS todos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sender TEXT, task TEXT, done INTEGER DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sender TEXT, key TEXT, value TEXT
     );
     CREATE TABLE IF NOT EXISTS group_settings (
       jid TEXT, key TEXT, value TEXT,
@@ -21,45 +32,69 @@ function initDB() {
     CREATE TABLE IF NOT EXISTS global_settings (
       key TEXT PRIMARY KEY, value TEXT
     );
-    CREATE TABLE IF NOT EXISTS keywords (
-      keyword TEXT PRIMARY KEY, reply TEXT
-    );
-    CREATE TABLE IF NOT EXISTS todos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      sender TEXT, task TEXT, done INTEGER DEFAULT 0
-    );
-    CREATE TABLE IF NOT EXISTS notes (
-      sender TEXT, key TEXT, value TEXT,
-      PRIMARY KEY (sender, key)
-    );
-    CREATE TABLE IF NOT EXISTS banned (
-      number TEXT PRIMARY KEY
-    );
   `);
+
+  // Seed default keywords
+  const defaults = [
+    ['hello', 'Hello! 👋 Welcome! Type *!help* to see all commands.'],
+    ['hi', 'Hey there! 👋 Type *!help* to see what I can do.'],
+    ['hey', 'Hey! 👋 How can I help you? Type *!help* for commands.'],
+    ['good morning', 'Good morning! ☀️ Hope you have an amazing day!'],
+    ['good afternoon', 'Good afternoon! 🌤️ Hope your day is going great!'],
+    ['good evening', 'Good evening! 🌙 Hope you had a wonderful day!'],
+    ['good night', 'Good night! 🌙 Sweet dreams!'],
+    ['sup', 'Hey! 😎 Type *!help* to see all commands.'],
+    ['whats up', 'Not much! 😄 Type *!help* to see what I can do.'],
+    ['howdy', 'Howdy! 🤠 Type *!help* to see all commands.'],
+    ['who are you', 'I am *xssrat Bot* 🤖 A powerful WhatsApp bot! Type *!help* to see all commands.'],
+    ['what can you do', 'I can do a lot! 🚀 Type *!help* to see all 80+ commands.'],
+    ['help me', 'Sure! Type *!help* to see all available commands. 😊'],
+    ['bot', 'Yes I am a bot! 🤖 Type *!help* to see what I can do.'],
+    ['are you a bot', 'Yes! I am *xssrat Bot* 🤖 Type *!help* for commands.'],
+    ['are you human', 'Nope! I am a bot 🤖 But I am pretty smart! Type *!help* to see what I can do.'],
+    ['ok', 'Got it! 👍 Let me know if you need anything.'],
+    ['okay', 'Alright! 👍 Let me know if you need anything.'],
+    ['thanks', 'You are welcome! 😊 Let me know if you need anything else.'],
+    ['thank you', 'You are welcome! 😊 Happy to help!'],
+    ['thx', 'No problem! 😊'],
+    ['bye', 'Goodbye! 👋 Have a great day!'],
+    ['goodbye', 'Goodbye! 👋 See you soon!'],
+    ['see you', 'See you! 👋 Take care!'],
+    ['take care', 'You too! 😊 Take care!'],
+    ['how are you', 'I am doing great! 😄 Thanks for asking. How can I help you?'],
+    ['how r u', 'I am great! 😄 How can I help you today?'],
+    ['wassup', 'Hey! 😎 Type *!help* to see all commands.'],
+    ['morning', 'Good morning! ☀️ Have a wonderful day!'],
+    ['evening', 'Good evening! 🌙 Hope your day went well!'],
+    ['night', 'Good night! 🌙 Rest well!'],
+    ['hola', 'Hola! 👋 Type *!help* to see all commands.'],
+    ['bonjour', 'Bonjour! 👋 Type *!help* to see all commands.'],
+    ['namaste', 'Namaste! 🙏 Type *!help* to see all commands.'],
+    ['salaam', 'Wa Alaikum Salaam! 🙏 Type *!help* to see all commands.'],
+    ['salam', 'Wa Alaikum Salaam! 🙏 How can I help you?'],
+    ['love you', 'Aww! 🥰 I love you too! Type *!help* to see all commands.'],
+    ['lol', 'Haha! 😂 Type *!help* to see all commands.'],
+    ['haha', '😂😂 Type *!help* to see all commands.'],
+    ['wow', 'Wow indeed! 😮 Type *!help* to see all commands.'],
+    ['nice', 'Thanks! 😊 Type *!help* to see all commands.'],
+    ['cool', 'Cool! 😎 Type *!help* to see all commands.'],
+    ['test', 'Bot is online and working! ✅ Type *!help* to see all commands.'],
+    ['ping', 'Pong! 🏓 Bot is online!'],
+    ['alive', 'Yes I am alive! ✅ Type *!help* to see all commands.'],
+    ['active', 'Bot is active and running! ✅ Type *!help* for commands.'],
+    ['online', 'Yes I am online! ✅ Type *!help* to see all commands.'],
+  ];
+
+  const insert = db.prepare('INSERT OR IGNORE INTO keywords (keyword, reply) VALUES (?, ?)');
+  for (const [keyword, reply] of defaults) {
+    insert.run(keyword, reply);
+  }
 
   logger.info('✅ Database initialized');
 }
 
 function logMessage(jid, sender, text) {
   db.prepare('INSERT INTO messages (jid, sender, text) VALUES (?, ?, ?)').run(jid, sender, text);
-}
-
-function getGroupSetting(jid, key) {
-  const row = db.prepare('SELECT value FROM group_settings WHERE jid=? AND key=?').get(jid, key);
-  return row?.value || null;
-}
-
-function setGroupSetting(jid, key, value) {
-  db.prepare('INSERT OR REPLACE INTO group_settings (jid, key, value) VALUES (?, ?, ?)').run(jid, key, value);
-}
-
-function getGlobalSetting(key) {
-  const row = db.prepare('SELECT value FROM global_settings WHERE key=?').get(key);
-  return row?.value || null;
-}
-
-function setGlobalSetting(key, value) {
-  db.prepare('INSERT OR REPLACE INTO global_settings (key, value) VALUES (?, ?)').run(key, value);
 }
 
 function addKeyword(keyword, reply) {
@@ -93,9 +128,7 @@ function listTodos(sender) {
 
 function completeTodo(sender, idx) {
   const todos = listTodos(sender);
-  if (todos[idx]) {
-    db.prepare('UPDATE todos SET done=1 WHERE id=?').run(todos[idx].id);
-  }
+  if (todos[idx]) db.prepare('UPDATE todos SET done=1 WHERE id=?').run(todos[idx].id);
 }
 
 function saveNote(sender, key, value) {
@@ -103,12 +136,27 @@ function saveNote(sender, key, value) {
 }
 
 function getNote(sender, key) {
-  const row = db.prepare('SELECT value FROM notes WHERE sender=? AND key=?').get(sender, key);
-  return row?.value || null;
+  return db.prepare('SELECT value FROM notes WHERE sender=? AND key=?').get(sender, key)?.value;
 }
 
 function listNotes(sender) {
-  return db.prepare('SELECT key FROM notes WHERE sender=?').all(sender).map(r => r.key);
+  return db.prepare('SELECT key FROM notes WHERE sender=?').all(sender).map(n => n.key);
+}
+
+function getGroupSetting(jid, key) {
+  return db.prepare('SELECT value FROM group_settings WHERE jid=? AND key=?').get(jid, key)?.value;
+}
+
+function setGroupSetting(jid, key, value) {
+  db.prepare('INSERT OR REPLACE INTO group_settings (jid, key, value) VALUES (?, ?, ?)').run(jid, key, value);
+}
+
+function getGlobalSetting(key) {
+  return db.prepare('SELECT value FROM global_settings WHERE key=?').get(key)?.value;
+}
+
+function setGlobalSetting(key, value) {
+  db.prepare('INSERT OR REPLACE INTO global_settings (key, value) VALUES (?, ?)').run(key, value);
 }
 
 function banUser(number) {
@@ -135,37 +183,36 @@ function getMessageStats(jid) {
 }
 
 function getStats() {
-  return {
-    totalMessages: db.prepare('SELECT COUNT(*) as c FROM messages').get()?.c || 0,
-    totalGroups: db.prepare('SELECT COUNT(DISTINCT jid) as c FROM group_settings').get()?.c || 0,
-  };
+  const total = db.prepare('SELECT COUNT(*) as c FROM messages').get()?.c || 0;
+  const today = db.prepare("SELECT COUNT(*) as c FROM messages WHERE date(time)=date('now')").get()?.c || 0;
+  const users = db.prepare('SELECT COUNT(DISTINCT sender) as c FROM messages').get()?.c || 0;
+  return { total, today, users };
 }
-
-module.exports = {
-  initDB, logMessage,
-  getGroupSetting, setGroupSetting,
-  getGlobalSetting, setGlobalSetting,
-  addKeyword, deleteKeyword, listKeywords, getKeywordReply,
-  saveTodo, listTodos, completeTodo,
-  saveNote, getNote, listNotes,
-  banUser, unbanUser, isBanned,
-  getRecentLogs, getMessageStats, getStats,
-};
 
 function saveSchedule(id, jid, cronExpr, message) {
   db.prepare('CREATE TABLE IF NOT EXISTS schedules (id TEXT PRIMARY KEY, jid TEXT, cron TEXT, message TEXT)').run();
   db.prepare('INSERT OR REPLACE INTO schedules (id, jid, cron, message) VALUES (?, ?, ?, ?)').run(id, jid, cronExpr, message);
 }
+
 function listSchedules() {
   try {
     db.prepare('CREATE TABLE IF NOT EXISTS schedules (id TEXT PRIMARY KEY, jid TEXT, cron TEXT, message TEXT)').run();
     return db.prepare('SELECT * FROM schedules').all();
   } catch { return []; }
 }
+
 function deleteSchedule(id) {
-  db.prepare('DELETE FROM schedules WHERE id=?').run(id);
+  try { db.prepare('DELETE FROM schedules WHERE id=?').run(id); } catch {}
 }
-function deleteNote(sender, key) {
-  db.prepare('DELETE FROM notes WHERE sender=? AND key=?').run(sender, key);
-}
-module.exports = Object.assign(module.exports, { saveSchedule, listSchedules, deleteSchedule, deleteNote });
+
+module.exports = {
+  initDB, logMessage,
+  addKeyword, deleteKeyword, listKeywords, getKeywordReply,
+  saveTodo, listTodos, completeTodo,
+  saveNote, getNote, listNotes,
+  getGroupSetting, setGroupSetting,
+  getGlobalSetting, setGlobalSetting,
+  banUser, unbanUser, isBanned,
+  getRecentLogs, getMessageStats, getStats,
+  saveSchedule, listSchedules, deleteSchedule,
+};

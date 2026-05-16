@@ -1,4 +1,5 @@
 const { getJID } = require('../utils/helpers');
+const { safeSend } = require('../utils/send');
 const { saveNote, getNote, listNotes, saveTodo, listTodos, completeTodo, getMessageStats,
         saveSchedule, listSchedules, deleteSchedule, addKeyword, deleteKeyword, listKeywords } = require('../db/database');
 const cron = require('node-cron');
@@ -16,7 +17,7 @@ async function handleProductivity(sock, msg, cmd, args) {
     case 'remind': {
       const timeStr = args[0];
       const reminder = args.slice(1).join(' ');
-      if (!timeStr || !reminder) { await sock.sendMessage(jid, { text: 'Usage: !remind 10m <msg> OR !remind 17:30 <msg>' }); return; }
+      if (!timeStr || !reminder) { await safeSend(sock, jid, { text: 'Usage: !remind 10m <msg> OR !remind 17:30 <msg>' }); return; }
       let ms = 0;
       if (/^\d+s$/.test(timeStr)) ms = parseInt(timeStr) * 1000;
       else if (/^\d+m$/.test(timeStr)) ms = parseInt(timeStr) * 60000;
@@ -28,12 +29,12 @@ async function handleProductivity(sock, msg, cmd, args) {
         if (target <= new Date()) target.setDate(target.getDate() + 1);
         ms = target - new Date();
       }
-      if (!ms) { await sock.sendMessage(jid, { text: 'Invalid time. Use 10m, 2h, or 17:30' }); return; }
+      if (!ms) { await safeSend(sock, jid, { text: 'Invalid time. Use 10m, 2h, or 17:30' }); return; }
       setTimeout(async () => {
-        await sock.sendMessage(jid, { text: 'Reminder: ' + reminder, mentions: [sender] });
+        await safeSend(sock, jid, { text: 'Reminder: ' + reminder, mentions: [sender] });
       }, ms);
       const whenStr = ms < 3600000 ? Math.round(ms/60000) + ' minutes' : Math.round(ms/3600000) + ' hours';
-      await sock.sendMessage(jid, { text: 'Reminder set for ' + whenStr + ': ' + reminder });
+      await safeSend(sock, jid, { text: 'Reminder set for ' + whenStr + ': ' + reminder });
       break;
     }
 
@@ -41,20 +42,20 @@ async function handleProductivity(sock, msg, cmd, args) {
       const sub = args[0]?.toLowerCase();
       if (sub === 'add') {
         const task = args.slice(1).join(' ');
-        if (!task) { await sock.sendMessage(jid, { text: 'Usage: !todo add <task>' }); return; }
+        if (!task) { await safeSend(sock, jid, { text: 'Usage: !todo add <task>' }); return; }
         await saveTodo(sender, task);
-        await sock.sendMessage(jid, { text: 'Added: ' + task });
+        await safeSend(sock, jid, { text: 'Added: ' + task });
       } else if (sub === 'list') {
         const todos = await listTodos(sender);
-        if (!todos.length) { await sock.sendMessage(jid, { text: 'Todo list is empty.' }); return; }
+        if (!todos.length) { await safeSend(sock, jid, { text: 'Todo list is empty.' }); return; }
         const lines = todos.map((t, i) => (t.done ? 'DONE' : 'TODO') + ' ' + (i+1) + '. ' + t.task);
-        await sock.sendMessage(jid, { text: 'Todo List:\n\n' + lines.join('\n') });
+        await safeSend(sock, jid, { text: 'Todo List:\n\n' + lines.join('\n') });
       } else if (sub === 'done') {
         const idx = parseInt(args[1]) - 1;
         await completeTodo(sender, idx);
-        await sock.sendMessage(jid, { text: 'Task marked done!' });
+        await safeSend(sock, jid, { text: 'Task marked done!' });
       } else {
-        await sock.sendMessage(jid, { text: 'Usage: !todo add/list/done <number>' });
+        await safeSend(sock, jid, { text: 'Usage: !todo add/list/done <number>' });
       }
       break;
     }
@@ -64,21 +65,21 @@ async function handleProductivity(sock, msg, cmd, args) {
       if (sub === 'save') {
         const [, key, ...rest] = args;
         const value = rest.join(' ');
-        if (!key || !value) { await sock.sendMessage(jid, { text: 'Usage: !note save <key> <text>' }); return; }
+        if (!key || !value) { await safeSend(sock, jid, { text: 'Usage: !note save <key> <text>' }); return; }
         await saveNote(sender, key, value);
-        await sock.sendMessage(jid, { text: 'Note saved: ' + key });
+        await safeSend(sock, jid, { text: 'Note saved: ' + key });
       } else if (sub === 'get') {
         const key = args[1];
-        if (!key) { await sock.sendMessage(jid, { text: 'Usage: !note get <key>' }); return; }
+        if (!key) { await safeSend(sock, jid, { text: 'Usage: !note get <key>' }); return; }
         const note = await getNote(sender, key);
-        if (!note) { await sock.sendMessage(jid, { text: 'No note found for ' + key }); return; }
-        await sock.sendMessage(jid, { text: key + ':\n\n' + note });
+        if (!note) { await safeSend(sock, jid, { text: 'No note found for ' + key }); return; }
+        await safeSend(sock, jid, { text: key + ':\n\n' + note });
       } else if (sub === 'list') {
         const notes = await listNotes(sender);
-        if (!notes.length) { await sock.sendMessage(jid, { text: 'No notes saved.' }); return; }
-        await sock.sendMessage(jid, { text: 'Notes:\n\n' + notes.map(n => '- ' + n).join('\n') });
+        if (!notes.length) { await safeSend(sock, jid, { text: 'No notes saved.' }); return; }
+        await safeSend(sock, jid, { text: 'Notes:\n\n' + notes.map(n => '- ' + n).join('\n') });
       } else {
-        await sock.sendMessage(jid, { text: 'Usage: !note save/get/list' });
+        await safeSend(sock, jid, { text: 'Usage: !note save/get/list' });
       }
       break;
     }
@@ -87,92 +88,92 @@ async function handleProductivity(sock, msg, cmd, args) {
       return handleProductivity(sock, msg, 'note', ['list']);
 
     case 'broadcast': {
-      if (!isOwner) { await sock.sendMessage(jid, { text: 'Owner only command.' }); return; }
+      if (!isOwner) { await safeSend(sock, jid, { text: 'Owner only command.' }); return; }
       const sub = args[0]?.toLowerCase();
       if (sub === 'all') {
         const message = args.slice(1).join(' ');
-        if (!message) { await sock.sendMessage(jid, { text: 'Usage: !broadcast all <message>' }); return; }
-        await sock.sendMessage(jid, { text: 'Broadcasting to all groups...' });
+        if (!message) { await safeSend(sock, jid, { text: 'Usage: !broadcast all <message>' }); return; }
+        await safeSend(sock, jid, { text: 'Broadcasting to all groups...' });
         const groups = await sock.groupFetchAllParticipating();
         const groupList = Object.values(groups);
         let sent = 0;
         for (const group of groupList) {
           try { await sock.sendMessage(group.id, { text: message }); sent++; await new Promise(r => setTimeout(r, 1500)); } catch (_) {}
         }
-        await sock.sendMessage(jid, { text: 'Broadcast sent to ' + sent + '/' + groupList.length + ' groups.' });
+        await safeSend(sock, jid, { text: 'Broadcast sent to ' + sent + '/' + groupList.length + ' groups.' });
       } else if (sub === 'list') {
         const message = args.slice(1).join(' ');
-        if (!message) { await sock.sendMessage(jid, { text: 'Usage: !broadcast list <message>' }); return; }
+        if (!message) { await safeSend(sock, jid, { text: 'Usage: !broadcast list <message>' }); return; }
         const contacts = (process.env.BROADCAST_LIST || '').split(',').map(n => n.trim()).filter(Boolean);
-        if (!contacts.length) { await sock.sendMessage(jid, { text: 'Add BROADCAST_LIST=2547XXX,2547XXX to .env first.' }); return; }
+        if (!contacts.length) { await safeSend(sock, jid, { text: 'Add BROADCAST_LIST=2547XXX,2547XXX to .env first.' }); return; }
         let sent = 0;
         for (const num of contacts) {
           try { await sock.sendMessage(num + '@s.whatsapp.net', { text: message }); sent++; await new Promise(r => setTimeout(r, 1500)); } catch (_) {}
         }
-        await sock.sendMessage(jid, { text: 'Sent to ' + sent + '/' + contacts.length + ' contacts.' });
+        await safeSend(sock, jid, { text: 'Sent to ' + sent + '/' + contacts.length + ' contacts.' });
       } else if (sub === 'groups') {
         const groups = await sock.groupFetchAllParticipating();
         const groupList = Object.values(groups);
         const lines = groupList.map((g, i) => (i+1) + '. ' + g.subject + ' (' + g.participants.length + ' members)');
-        await sock.sendMessage(jid, { text: 'Your Groups (' + groupList.length + '):\n\n' + lines.join('\n') });
+        await safeSend(sock, jid, { text: 'Your Groups (' + groupList.length + '):\n\n' + lines.join('\n') });
       } else {
-        await sock.sendMessage(jid, { text: 'Broadcast:\n!broadcast all <msg>\n!broadcast list <msg>\n!broadcast groups' });
+        await safeSend(sock, jid, { text: 'Broadcast:\n!broadcast all <msg>\n!broadcast list <msg>\n!broadcast groups' });
       }
       break;
     }
 
     case 'schedule': {
-      if (!isOwner) { await sock.sendMessage(jid, { text: 'Owner only command.' }); return; }
+      if (!isOwner) { await safeSend(sock, jid, { text: 'Owner only command.' }); return; }
       const sub = args[0]?.toLowerCase();
       if (sub === 'add') {
         const time = args[1];
         const message = args.slice(2).join(' ');
-        if (!time || !message) { await sock.sendMessage(jid, { text: 'Usage: !schedule add HH:MM <message>' }); return; }
+        if (!time || !message) { await safeSend(sock, jid, { text: 'Usage: !schedule add HH:MM <message>' }); return; }
         const [h, m] = time.split(':');
         const cronExpr = m + ' ' + h + ' * * *';
         const id = Date.now().toString();
         await saveSchedule(id, jid, cronExpr, message);
         global.scheduledJobs[id] = cron.schedule(cronExpr, async () => {
-          await sock.sendMessage(jid, { text: 'Scheduled: ' + message });
+          await safeSend(sock, jid, { text: 'Scheduled: ' + message });
         });
-        await sock.sendMessage(jid, { text: 'Scheduled daily at ' + time + ': ' + message });
+        await safeSend(sock, jid, { text: 'Scheduled daily at ' + time + ': ' + message });
       } else if (sub === 'list') {
         const schedules = await listSchedules();
-        if (!schedules.length) { await sock.sendMessage(jid, { text: 'No scheduled messages.' }); return; }
+        if (!schedules.length) { await safeSend(sock, jid, { text: 'No scheduled messages.' }); return; }
         const lines = schedules.map((s, i) => (i+1) + '. [' + s.id + '] ' + s.cron + ' - ' + s.message);
-        await sock.sendMessage(jid, { text: 'Schedules:\n\n' + lines.join('\n') });
+        await safeSend(sock, jid, { text: 'Schedules:\n\n' + lines.join('\n') });
       } else if (sub === 'delete') {
         const id = args[1];
-        if (!id) { await sock.sendMessage(jid, { text: 'Usage: !schedule delete <id>' }); return; }
+        if (!id) { await safeSend(sock, jid, { text: 'Usage: !schedule delete <id>' }); return; }
         if (global.scheduledJobs[id]) { global.scheduledJobs[id].destroy(); delete global.scheduledJobs[id]; }
         await deleteSchedule(id);
-        await sock.sendMessage(jid, { text: 'Schedule deleted.' });
+        await safeSend(sock, jid, { text: 'Schedule deleted.' });
       } else {
-        await sock.sendMessage(jid, { text: 'Schedule:\n!schedule add HH:MM <msg>\n!schedule list\n!schedule delete <id>' });
+        await safeSend(sock, jid, { text: 'Schedule:\n!schedule add HH:MM <msg>\n!schedule list\n!schedule delete <id>' });
       }
       break;
     }
 
     case 'autoreply': {
-      if (!isOwner) { await sock.sendMessage(jid, { text: 'Owner only command.' }); return; }
+      if (!isOwner) { await safeSend(sock, jid, { text: 'Owner only command.' }); return; }
       const sub = args[0]?.toLowerCase();
       if (sub === 'add') {
         const keyword = args[1];
         const reply = args.slice(2).join(' ');
-        if (!keyword || !reply) { await sock.sendMessage(jid, { text: 'Usage: !autoreply add <keyword> <reply>' }); return; }
+        if (!keyword || !reply) { await safeSend(sock, jid, { text: 'Usage: !autoreply add <keyword> <reply>' }); return; }
         await addKeyword(keyword.toLowerCase(), reply);
-        await sock.sendMessage(jid, { text: 'Auto-reply: ' + keyword + ' -> ' + reply });
+        await safeSend(sock, jid, { text: 'Auto-reply: ' + keyword + ' -> ' + reply });
       } else if (sub === 'delete') {
         const keyword = args[1];
-        if (!keyword) { await sock.sendMessage(jid, { text: 'Usage: !autoreply delete <keyword>' }); return; }
+        if (!keyword) { await safeSend(sock, jid, { text: 'Usage: !autoreply delete <keyword>' }); return; }
         await deleteKeyword(keyword.toLowerCase());
-        await sock.sendMessage(jid, { text: 'Deleted: ' + keyword });
+        await safeSend(sock, jid, { text: 'Deleted: ' + keyword });
       } else if (sub === 'list') {
         const keywords = await listKeywords();
-        if (!keywords.length) { await sock.sendMessage(jid, { text: 'No auto-replies set.' }); return; }
-        await sock.sendMessage(jid, { text: 'Auto-replies:\n\n' + keywords.map(k => k.keyword + ' -> ' + k.reply).join('\n') });
+        if (!keywords.length) { await safeSend(sock, jid, { text: 'No auto-replies set.' }); return; }
+        await safeSend(sock, jid, { text: 'Auto-replies:\n\n' + keywords.map(k => k.keyword + ' -> ' + k.reply).join('\n') });
       } else {
-        await sock.sendMessage(jid, { text: 'Usage: !autoreply add/delete/list' });
+        await safeSend(sock, jid, { text: 'Usage: !autoreply add/delete/list' });
       }
       break;
     }
@@ -181,7 +182,7 @@ async function handleProductivity(sock, msg, cmd, args) {
       const stats = await getMessageStats(jid);
       const groups = await sock.groupFetchAllParticipating().catch(() => ({}));
       const uptime = Math.floor(process.uptime());
-      await sock.sendMessage(jid, {
+      await safeSend(sock, jid, {
         text: 'Bot Stats:\nMessages: ' + stats.total + '\nToday: ' + stats.today +
           '\nUsers: ' + stats.users + '\nGroups: ' + Object.keys(groups).length +
           '\nUptime: ' + Math.floor(uptime/3600) + 'h ' + Math.floor((uptime%3600)/60) + 'm'
