@@ -8,6 +8,8 @@ const { handleInfo } = require('./info');
 const { handleProductivity } = require('./productivity');
 const { handleAdmin } = require('./admin');
 const { handleSpecial, isNightModeActive } = require('./special');
+const { handleGroupExtra } = require('./group_extra');
+const { handlePersonal } = require('./personal');
 const { checkAutoReply } = require('../core/autoreply');
 const { checkAntiSpam } = require('../core/antispam');
 const { logMessage, isBanned } = require('../db/database');
@@ -87,6 +89,12 @@ async function dispatchCommand(sock, msg, store) {
     // Special commands
     } else if (['nightmode', 'mood', 'rate', 'confess', 'anonymous'].includes(cmd)) {
       await handleSpecial(sock, msg, cmd, args);
+
+    } else if (['tagall', 'rules', 'setrules', 'vote', 'leaderboard'].includes(cmd)) {
+      await handleGroupExtra(sock, msg, cmd, args);
+
+    } else if (['journal', 'myjournal', 'motivate', 'vent', 'affirmation', 'grammar', 'rewrite', 'emoji', 'summarizelink'].includes(cmd)) {
+      await handlePersonal(sock, msg, cmd, args);
 
     // Admin only
     } else if (['setprefix', 'setlang', 'setautoreply', 'ban', 'unban',
