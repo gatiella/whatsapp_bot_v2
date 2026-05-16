@@ -7,6 +7,7 @@ const { handleFun } = require('./fun');
 const { handleInfo } = require('./info');
 const { handleProductivity } = require('./productivity');
 const { handleAdmin } = require('./admin');
+const { handleSpecial, isNightModeActive } = require('./special');
 const { checkAutoReply } = require('../core/autoreply');
 const { checkAntiSpam } = require('../core/antispam');
 const { logMessage, isBanned } = require('../db/database');
@@ -82,6 +83,10 @@ async function dispatchCommand(sock, msg, store) {
     } else if (['remind', 'todo', 'note', 'notes', 'broadcast',
                 'schedule', 'stats', 'autoreply'].includes(cmd)) {
       await handleProductivity(sock, msg, cmd, args);
+
+    // Special commands
+    } else if (['nightmode', 'mood', 'rate', 'confess', 'anonymous'].includes(cmd)) {
+      await handleSpecial(sock, msg, cmd, args);
 
     // Admin only
     } else if (['setprefix', 'setlang', 'setautoreply', 'ban', 'unban',

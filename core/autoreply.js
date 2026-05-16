@@ -1,4 +1,5 @@
 const { getKeywordReply } = require('../db/database');
+const { isNightModeActive } = require('../handlers/special');
 
 const MODELS = [
   'google/gemma-4-31b-it:free',
@@ -6,7 +7,11 @@ const MODELS = [
   'deepseek/deepseek-v4-flash:free',
 ];
 
-async function getAIReply(text) {
+async function getAIReply(text, isNight = false) {
+  const system = isNight
+    ? 'You are xssrat, a flirty and playful WhatsApp bot. It is late at night so be extra charming, witty and flirty. Keep replies short, fun and seductive. Max 2 sentences.'
+    : 'You are xssrat, a helpful WhatsApp bot assistant. Keep replies short and friendly. Max 3 sentences.';
+
   for (const model of MODELS) {
     try {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -18,7 +23,7 @@ async function getAIReply(text) {
         body: JSON.stringify({
           model,
           messages: [
-            { role: 'system', content: 'You are xssrat, a helpful WhatsApp bot assistant. Keep replies short and friendly. Max 3 sentences.' },
+            { role: 'system', content: system },
             { role: 'user', content: text }
           ],
           max_tokens: 200,
@@ -34,19 +39,22 @@ async function getAIReply(text) {
 
 async function checkAutoReply(sock, msg, text, jid) {
   const reply = getKeywordReply(text);
-  const finalReply = reply || await getAIReply(text);
-  if (!finalReply) return;
+  if (reply) {
+    await new Promise(r => setTimeout(r, 1000));
+    await sock.sendMessage(jid, { text: reply });
+    return;
+  }
 
-  // Try sending with increasing delays
+  const isNight = isNightModeActive(jid);
+  const aiReply = await getAIReply(text, isNight);
+  if (!aiReply) return;
+
   for (let i = 0; i < 5; i++) {
     try {
-      await new Promise(r => setTimeout(r, 3000 * (i + 1)));
-      await sock.sendMessage(jid, { text: finalReply });
-      console.log('[SENT] autoreply ok attempt', i + 1);
+      await new Promise(r => setTimeout(r, 2000 * (i + 1)));
+      await sock.sendMessage(jid, { text: aiReply });
       return;
-    } catch (err) {
-      console.log('[RETRY]', i + 1, err.message);
-    }
+    } catch (_) {}
   }
 }
 
