@@ -42,6 +42,7 @@ global.personas = global.personas || {};
 global.chatHistory = global.chatHistory || {};
 global.scheduledDMs = global.scheduledDMs || [];
 global.lastBotMessage = global.lastBotMessage || {};
+global.botMessages = global.botMessages || {};
 
 async function handleUnique(sock, msg, cmd, args) {
   const jid = getJID(msg);
@@ -96,6 +97,50 @@ async function handleUnique(sock, msg, cmd, args) {
           }
         } catch {}
 
+        // AbstractAPI phone intelligence
+        try {
+          const abstractKey = process.env.ABSTRACTAPI_KEY;
+          if (abstractKey) {
+            const apiRes = await fetch(`https://phoneintelligence.abstractapi.com/v1/?api_key=${abstractKey}&phone=${number}`);
+            const apiData = await apiRes.json();
+            if (apiData && !apiData.error) {
+              const fmt = apiData.phone_format?.international || '+' + number;
+              const carrier = apiData.phone_carrier?.name;
+              const lineType = apiData.phone_carrier?.line_type;
+              const country = apiData.phone_location?.country_name;
+              const region = apiData.phone_location?.region;
+              const tz = apiData.phone_location?.timezone;
+              const isValid = apiData.phone_validation?.is_valid;
+              const lineStatus = apiData.phone_validation?.line_status;
+              const isVoip = apiData.phone_validation?.is_voip;
+              const riskLevel = apiData.phone_risk?.risk_level;
+              const isDisposable = apiData.phone_risk?.is_disposable;
+              const breaches = apiData.phone_breaches?.total_breaches;
+              const firstBreach = apiData.phone_breaches?.date_first_breached;
+              const lastBreach = apiData.phone_breaches?.date_last_breached;
+
+              text += `\n\n📡 *Phone Intelligence*`;
+              text += `\n📞 Format: ${fmt}`;
+              if (carrier) text += `\n🗼 Carrier: ${carrier}`;
+              if (lineType) text += `\n📱 Line type: ${lineType}`;
+              if (isVoip !== null) text += `\n🌐 VoIP: ${isVoip ? 'Yes ⚠️' : 'No'}`;
+              if (lineStatus) text += `\n✅ Line status: ${lineStatus}`;
+              if (country) text += `\n🌍 Country: ${country}`;
+              if (region && region !== country) text += `\n📍 Region: ${region}`;
+              if (tz) text += `\n🕐 Timezone: ${tz}`;
+              if (isValid === false) text += `\n⚠️ Number invalid`;
+              if (riskLevel) text += `\n⚠️ Risk level: ${riskLevel}`;
+              if (isDisposable) text += `\n🚨 Disposable number: Yes`;
+              if (breaches) {
+                text += `\n\n🔓 *Data Breaches*`;
+                text += `\n💥 Total breaches: ${breaches}`;
+                if (firstBreach) text += `\n📅 First breach: ${firstBreach}`;
+                if (lastBreach) text += `\n📅 Last breach: ${lastBreach}`;
+              }
+            }
+          }
+        } catch {}
+
         // Country from prefix
         const cc = number.slice(0, number.length > 11 ? 3 : number.length > 10 ? 3 : 2);
         const countries = {'254':'🇰🇪 Kenya','255':'🇹🇿 Tanzania','256':'🇺🇬 Uganda','251':'🇪🇹 Ethiopia','234':'🇳🇬 Nigeria','27':'🇿🇦 South Africa','1':'🇺🇸 US/Canada','44':'🇬🇧 UK','91':'🇮🇳 India','86':'🇨🇳 China','49':'🇩🇪 Germany','33':'🇫🇷 France'};
@@ -134,10 +179,66 @@ async function handleUnique(sock, msg, cmd, args) {
         // Direct link
         text += `\n🔗 Link: https://wa.me/${number}`;
 
+        // Platform registration checks
+        text += `\n\n🌐 *Platform Checks*`;
+
+        // Snapchat
+        try {
+          const sr = await fetch('https://accounts.snapchat.com/accounts/get_username_suggestions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `phone_number=%2B${number}`
+          });
+          const sd = await sr.json();
+          text += `\n📸 Snapchat: ${sd?.username_suggestions?.length || sr.status === 200 ? '✅ Registered' : '❌ Not found'}`;
+        } catch { text += `\n📸 Snapchat: ⚠️ Failed`; }
+
+        // Instagram
+        try {
+          const ir = await fetch('https://www.instagram.com/accounts/account_recovery_send_ajax/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': 'missing', 'X-Requested-With': 'XMLHttpRequest' },
+            body: `phone_number=${encodeURIComponent('+' + number)}`
+          });
+          const id = await ir.json();
+          text += `\n📷 Instagram: ${id?.success || id?.message === 'success' ? '✅ Registered' : '❌ Not found'}`;
+        } catch { text += `\n📷 Instagram: ⚠️ Failed`; }
+
+        // Amazon
+        try {
+          const ar = await fetch('https://www.amazon.com/ap/signin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `email=%2B${number}&create=0`
+          });
+          const at = await ar.text();
+          text += `\n🛒 Amazon: ${at.includes('auth-password') || at.includes('password') ? '✅ Registered' : '❌ Not found'}`;
+        } catch { text += `\n🛒 Amazon: ⚠️ Failed`; }
+
+        // WhatsApp already checked above
+        text += `\n💬 WhatsApp: ${result?.exists ? '✅ Registered' : '❌ Not found'}`;
+
+        // Telegram
+        text += `\n✈️ Telegram: t.me/+${number}`;
+
+        // Search links
+        const encoded = encodeURIComponent('+' + number);
+        text += `\n\n🔗 *Search Links*`;
+        text += `\n• 🌐 Google: https://www.google.com/search?q=${encoded}`;
+        text += `\n• 🖼️ Google Images: https://www.google.com/search?tbm=isch&q=${encoded}`;
+        text += `\n• 📞 Truecaller: https://www.truecaller.com/search/ke/${number}`;
+        text += `\n• 👤 Facebook: https://www.facebook.com/search/people/?q=${number}`;
+        text += `\n• 📸 Instagram: https://www.instagram.com/explore/search/keyword/?q=${encoded}`;
+        text += `\n• 🎵 TikTok: https://www.tiktok.com/search?q=${encoded}`;
+        text += `\n• 🐦 Twitter/X: https://x.com/search?q=${encoded}`;
+        text += `\n• 💼 LinkedIn: https://www.linkedin.com/search/results/people/?keywords=${encoded}`;
+        text += `\n• ▶️ YouTube: https://www.youtube.com/results?search_query=${encoded}`;
+        text += `\n• 👻 Snapchat: https://www.snapchat.com/add/${number}`;
+
         // Profile picture (high-res fallback to low-res)
-        const ppUrl = await sock.profilePictureUrl(jidToCheck, 'image').catch(() =>
-          sock.profilePictureUrl(jidToCheck, 'preview').catch(() => null)
-        );
+        const ppUrl = await sock.profilePictureUrl(jidToCheck, 'image').catch(() => null) ||
+          await sock.profilePictureUrl(jidToCheck, 'preview').catch(() => null) ||
+          await sock.profilePictureUrl(jidToCheck, 'thumbnail').catch(() => null);
         if (ppUrl) {
           await sock.sendMessage(jid, { image: { url: ppUrl }, caption: text });
         } else {
@@ -213,6 +314,297 @@ async function handleUnique(sock, msg, cmd, args) {
 
       try { await sock.subscribePresence(ownerJid); } catch {}
       await safeSend(sock, jid, { text: `📡 *Monitoring your own number*\n\nTracking your online/offline activity silently.\n\n• !myonline report — see activity log\n• !myonline stop — stop monitoring` });
+      break;
+    }
+
+    case 'usersearch': {
+      const username = args[0];
+      if (!username) { await safeSend(sock, jid, { text: '❌ Usage: !usersearch <username>' }); return; }
+      await safeSend(sock, jid, { text: `🔍 Searching for *${username}* across platforms...` });
+
+      const platforms = [
+        { name: '🐙 GitHub', url: `https://github.com/${username}`, notFound: ['Not Found', 'This is not the web page'] },
+        { name: '🐦 Twitter/X', url: `https://x.com/${username}`, notFound: ['This account doesn\'t exist', 'page does not exist'] },
+        { name: '📸 Instagram', url: `https://www.instagram.com/${username}/`, notFound: ["Sorry, this page isn\'t available"] },
+        { name: '🎵 TikTok', url: `https://www.tiktok.com/@${username}`, notFound: ["Couldn\'t find this account"] },
+        { name: '▶️ YouTube', url: `https://www.youtube.com/@${username}`, notFound: ['404', 'not available'] },
+        { name: '👻 Snapchat', url: `https://www.snapchat.com/add/${username}`, notFound: ['Sorry, we couldn\'t find'] },
+        { name: '💼 LinkedIn', url: `https://www.linkedin.com/in/${username}`, notFound: ['Page not found', 'profile is not available'] },
+        { name: '🎮 Twitch', url: `https://www.twitch.tv/${username}`, notFound: ['Sorry. Unless you\'ve got a time machine'] },
+        { name: '🎮 Steam', url: `https://steamcommunity.com/id/${username}`, notFound: ['The specified profile could not be found'] },
+        { name: '🟠 Reddit', url: `https://www.reddit.com/user/${username}`, notFound: ['nobody on Reddit goes by that name', 'page not found'] },
+        { name: '🖼️ Pinterest', url: `https://www.pinterest.com/${username}`, notFound: ['Hmm, we couldn\'t find that page'] },
+        { name: '💻 GitLab', url: `https://gitlab.com/${username}`, notFound: ['404', 'page not found'] },
+        { name: '🐳 Docker', url: `https://hub.docker.com/u/${username}`, notFound: ['404', 'Page Not Found'] },
+        { name: '📝 Medium', url: `https://medium.com/@${username}`, notFound: ['Page not found', '404'] },
+        { name: '🎵 SoundCloud', url: `https://soundcloud.com/${username}`, notFound: ['We can\'t find that user'] },
+        { name: '💬 Telegram', url: `https://t.me/${username}`, notFound: ['If you have Telegram'] },
+      ];
+
+      const found = [];
+      const notFound = [];
+      const failed = [];
+
+      for (const p of platforms) {
+        try {
+          const r = await fetch(p.url, {
+            method: 'GET',
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36' },
+            redirect: 'follow'
+          });
+          if (r.status === 404) {
+            notFound.push(`${p.name}: ❌`);
+          } else if (r.status === 200) {
+            const body = await r.text();
+            const isNotFound = p.notFound?.some(str => body.includes(str));
+            if (isNotFound) notFound.push(`${p.name}: ❌`);
+            else found.push(`${p.name}: ✅ ${p.url}`);
+          } else {
+            failed.push(`${p.name}: ⚠️ ${r.status}`);
+          }
+        } catch { failed.push(`${p.name}: ⚠️ Failed`); }
+      }
+
+      let report = `👤 *Username OSINT: ${username}*\n`;
+      report += `✅ Found: ${found.length} | ❌ Not found: ${notFound.length}\n\n`;
+      if (found.length) report += `*Found on:*\n` + found.join('\n') + '\n\n';
+      if (notFound.length) report += `*Not found on:*\n` + notFound.join('  ') + '\n';
+      if (failed.length) report += `\n*Failed checks:*\n` + failed.join('  ');
+
+      await safeSend(sock, jid, { text: report });
+      break;
+    }
+
+    case 'pastebin': {
+      const query = args.join(' ');
+      if (!query) { await safeSend(sock, jid, { text: '❌ Usage: !pastebin <email/number/username>' }); return; }
+      await safeSend(sock, jid, { text: `🔍 Searching pastes for *${query}*...` });
+      const encoded = encodeURIComponent(query);
+      const sites = [
+        `https://www.google.com/search?q=site:pastebin.com+${encoded}`,
+        `https://www.google.com/search?q=site:paste.ee+${encoded}`,
+        `https://www.google.com/search?q=site:ghostbin.com+${encoded}`,
+        `https://www.google.com/search?q=site:hastebin.com+${encoded}`,
+        `https://www.google.com/search?q=site:rentry.co+${encoded}`,
+        `https://www.google.com/search?q=site:privatebin.net+${encoded}`,
+      ];
+      let text = `📋 *Pastebin OSINT: ${query}*\n\nOpen these links to check for exposed data:\n\n`;
+      text += sites.map((s, i) => `${i+1}. ${s}`).join('\n');
+      text += `\n\n💡 Tip: If Google shows results, the data has been publicly leaked.`;
+      await safeSend(sock, jid, { text });
+      break;
+    }
+
+    case 'anonymous': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      const message = args.slice(1).join(' ');
+      if (!number || !message) {
+        await safeSend(sock, jid, { text: '❌ Usage: !anonymous <number> <message>' });
+        return;
+      }
+      const targetJid = number + '@s.whatsapp.net';
+      try {
+        await sock.sendMessage(targetJid, { text: message });
+        await safeSend(sock, jid, { text: '✅ Anonymous message sent.' });
+      } catch (err) {
+        await safeSend(sock, jid, { text: '❌ Failed: ' + err.message });
+      }
+      break;
+    }
+
+    case 'ghostlist': {
+      if (!jid.endsWith('@g.us')) { await safeSend(sock, jid, { text: '❌ Only works in groups.' }); return; }
+      const days = parseInt(args[0]) || 7;
+      const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+      try {
+        const meta = await sock.groupMetadata(jid);
+        const active = new Set();
+        // scan message cache for recent senders
+        if (global.messageCache) {
+          for (const [id, cached] of Object.entries(global.messageCache)) {
+            if (cached.timestamp && cached.timestamp > cutoff && cached.jid === jid) {
+              active.add(cached.sender);
+            }
+          }
+        }
+        const ghosts = meta.participants.filter(p => !active.has(p.id) && !p.id.includes(process.env.OWNER_NUMBER));
+        if (!ghosts.length) {
+          await safeSend(sock, jid, { text: `✅ No ghosts found in the last ${days} days.` });
+          return;
+        }
+        const list = ghosts.map((p, i) => `${i+1}. @${p.id.replace('@s.whatsapp.net','').replace('@lid','')}`).join('
+');
+        await sock.sendMessage(jid, {
+          text: `👻 *Ghost Members (${days} days)*
+${ghosts.length} inactive members:
+
+${list}`,
+          mentions: ghosts.map(p => p.id)
+        });
+      } catch (err) {
+        await safeSend(sock, jid, { text: '❌ Failed: ' + err.message });
+      }
+      break;
+    }
+
+    case 'autotyping': {
+      const val = args[0]?.toLowerCase();
+      if (!['on', 'off'].includes(val)) { await safeSend(sock, jid, { text: '❌ Usage: !autotyping on/off' }); return; }
+      if (val === 'off') {
+        if (global.autoTypingTimer) { clearInterval(global.autoTypingTimer); global.autoTypingTimer = null; }
+        await safeSend(sock, jid, { text: '⌨️ Auto typing indicator OFF.' });
+        return;
+      }
+      global.autoTypingTimer = setInterval(async () => {
+        try {
+          await sock.sendPresenceUpdate('composing', jid);
+          setTimeout(() => sock.sendPresenceUpdate('paused', jid), 3000);
+        } catch {}
+      }, 30000);
+      await safeSend(sock, jid, { text: '⌨️ Auto typing indicator ON — bot appears active every 30s.' });
+      break;
+    }
+
+    case 'clone': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      if (!number) { await safeSend(sock, jid, { text: '❌ Usage: !clone <number>' }); return; }
+      await safeSend(sock, jid, { text: '🔄 Cloning profile info...' });
+      try {
+        const targetJid = number + '@s.whatsapp.net';
+        const status = await sock.fetchStatus(targetJid).catch(() => null);
+        const ppUrl = await sock.profilePictureUrl(targetJid, 'image').catch(() => null);
+        let done = [];
+        if (status?.status) {
+          await sock.updateProfileStatus(status.status);
+          done.push('📝 About: ' + status.status);
+        }
+        if (ppUrl) {
+          const res = await fetch(ppUrl);
+          const buf = Buffer.from(await res.arrayBuffer());
+          await sock.updateProfilePicture(process.env.OWNER_NUMBER + '@s.whatsapp.net', buf);
+          done.push('🖼️ Profile picture cloned');
+        }
+        if (!done.length) await safeSend(sock, jid, { text: '⚠️ Nothing to clone — target profile is private.' });
+        else await safeSend(sock, jid, { text: '✅ *Cloned:*
+' + done.join('
+') });
+      } catch (err) {
+        await safeSend(sock, jid, { text: '❌ Clone failed: ' + err.message });
+      }
+      break;
+    }
+
+    case 'recallall': {
+      await safeSend(sock, jid, { text: '🗑️ Deleting all bot messages...' });
+      let count = 0;
+      if (global.botMessages?.[jid]) {
+        for (const key of global.botMessages[jid]) {
+          try {
+            await sock.sendMessage(jid, { delete: key });
+            count++;
+            await new Promise(r => setTimeout(r, 500));
+          } catch {}
+        }
+        global.botMessages[jid] = [];
+      }
+      await safeSend(sock, jid, { text: `✅ Deleted ${count} bot messages.` });
+      break;
+    }
+
+    case 'mimic': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      const prompt = args.slice(1).join(' ');
+      if (!number || !prompt) {
+        await safeSend(sock, jid, { text: '❌ Usage: !mimic <number> <what to say>\nExample: !mimic 254712345678 tell them you are running late' });
+        return;
+      }
+      const targetJid = number + '@s.whatsapp.net';
+      const history = global.messageCache ? Object.values(global.messageCache).filter(m => m.sender === targetJid).slice(-20).map(m => m.text).filter(Boolean) : [];
+      if (!history.length) {
+        await safeSend(sock, jid, { text: '⚠️ No message history found for that number. They need to have sent messages the bot has seen.' });
+        return;
+      }
+      await safeSend(sock, jid, { text: '🎭 Analyzing style...' });
+      const stylePrompt = `Here are sample messages from a person:\n${history.join('\n')}\n\nNow write a message in their exact texting style, tone, vocabulary and punctuation habits about: ${prompt}\nJust return the message, nothing else.`;
+      const reply = await askAI(stylePrompt, 'You are a writing style mimic. Study the examples and replicate the style exactly.');
+      await safeSend(sock, jid, { text: reply ? `🎭 *Mimic draft:*\n\n"${reply}"` : '❌ Could not generate.' });
+      break;
+    }
+
+    case 'fakeonline': {
+      const val = args[0]?.toLowerCase();
+      if (!['on', 'off'].includes(val)) { await safeSend(sock, jid, { text: '❌ Usage: !fakeonline on/off' }); return; }
+      if (val === 'off') {
+        if (global.fakeOnlineTimer) { clearInterval(global.fakeOnlineTimer); global.fakeOnlineTimer = null; }
+        await sock.sendPresenceUpdate('unavailable');
+        await safeSend(sock, jid, { text: '🔴 Fake online OFF.' });
+        return;
+      }
+      global.fakeOnlineTimer = setInterval(async () => {
+        try { await sock.sendPresenceUpdate('available'); } catch {}
+      }, 10000);
+      await sock.sendPresenceUpdate('available');
+      await safeSend(sock, jid, { text: '🟢 Fake online ON — your number appears online continuously.' });
+      break;
+    }
+
+    case 'lastseen': {
+      const val = args[0]?.toLowerCase();
+      const options = ['everyone', 'contacts', 'nobody'];
+      if (!options.includes(val)) {
+        await safeSend(sock, jid, { text: '❌ Usage: !lastseen <everyone/contacts/nobody>' });
+        return;
+      }
+      try {
+        await sock.updateLastSeenPrivacy(val);
+        await safeSend(sock, jid, { text: `✅ Last seen set to: *${val}*` });
+      } catch (err) {
+        await safeSend(sock, jid, { text: '❌ Failed: ' + err.message });
+      }
+      break;
+    }
+
+    case 'recallall': {
+      const limit = parseInt(args[0]) || 10;
+      try {
+        const stored = global.botMessages?.[jid];
+        if (!stored?.length) { await safeSend(sock, jid, { text: '❌ No stored bot messages found.' }); return; }
+        let deleted = 0;
+        for (const key of stored.slice(-limit)) {
+          try { await sock.sendMessage(jid, { delete: key }); deleted++; } catch {}
+        }
+        global.botMessages[jid] = [];
+        await safeSend(sock, jid, { text: `🗑️ Deleted ${deleted} bot messages.` });
+      } catch (err) {
+        await safeSend(sock, jid, { text: '❌ Failed: ' + err.message });
+      }
+      break;
+    }
+
+    case 'mimic': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      const messageToReply = args.slice(1).join(' ');
+      if (!number || !messageToReply) {
+        await safeSend(sock, jid, { text: '❌ Usage: !mimic <number> <message to reply to>\nExample: !mimic 254712345678 hey how are you' });
+        return;
+      }
+      const targetJid = number + '@s.whatsapp.net';
+      // gather cached messages from this person
+      const samples = Object.values(global.messageCache || {})
+        .filter(m => m.sender === targetJid && m.text)
+        .slice(-20)
+        .map(m => m.text)
+        .join('\n');
+      if (!samples) {
+        await safeSend(sock, jid, { text: '⚠️ No cached messages from that number yet. They need to send messages first.' });
+        return;
+      }
+      await safeSend(sock, jid, { text: '🎭 Analyzing style...' });
+      const reply = await askAI(
+        `Their messages:\n${samples}\n\nMessage to reply to: "${messageToReply}"`,
+        'Analyze the writing style, tone, vocabulary, emoji usage, and sentence length from these sample messages. Then write a reply to the given message in exactly that person\'s style. Only return the reply, nothing else.'
+      );
+      await safeSend(sock, jid, { text: reply ? `🎭 *Mimic Reply:*\n\n${reply}` : '❌ Could not generate reply.' });
       break;
     }
     case 'stalkwatch': {
@@ -350,6 +742,8 @@ async function handleUnique(sock, msg, cmd, args) {
       const val = args[0]?.toLowerCase();
       if (!['on', 'off'].includes(val)) { await safeSend(sock, jid, { text: '❌ Usage: !spy on/off' }); return; }
       global.spyMode[jid] = val === 'on' ? ownerNumber : null;
+      global.spyMedia = global.spyMedia || {};
+      global.spyMedia[jid] = val === 'on';
       await safeSend(sock, jid, {
         text: val === 'on'
           ? '🕵️ *Spy Mode ON* — All group messages will be forwarded to your DM.'

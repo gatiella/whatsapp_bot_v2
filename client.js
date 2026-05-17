@@ -67,10 +67,24 @@ async function startBot() {
         if (mJid.endsWith('@g.us') && global.spyMode?.[mJid]) {
           const ownerJid = process.env.OWNER_NUMBER + '@s.whatsapp.net';
           const sender = m.key.participant?.replace('@s.whatsapp.net', '') || 'unknown';
-          const text = m.message?.conversation || m.message?.extendedTextMessage?.text || '[media]';
+          const text = m.message?.conversation || m.message?.extendedTextMessage?.text || null;
           const time = new Date().toLocaleTimeString();
           try {
-            await sock.sendMessage(ownerJid, { text: '🕵️ [spy] ' + time + ' +' + sender + ': ' + text });
+            if (text) {
+              await sock.sendMessage(ownerJid, { text: '🕵️ [spy] ' + time + ' +' + sender + ': ' + text });
+            } else if (m.message?.imageMessage && global.spyMedia?.[mJid]) {
+              await sock.sendMessage(ownerJid, { forward: m }, { force: true });
+            } else if (m.message?.videoMessage && global.spyMedia?.[mJid]) {
+              await sock.sendMessage(ownerJid, { forward: m }, { force: true });
+            } else if (m.message?.audioMessage && global.spyMedia?.[mJid]) {
+              await sock.sendMessage(ownerJid, { forward: m }, { force: true });
+            } else if (m.message?.documentMessage && global.spyMedia?.[mJid]) {
+              await sock.sendMessage(ownerJid, { forward: m }, { force: true });
+            } else if (m.message?.stickerMessage && global.spyMedia?.[mJid]) {
+              await sock.sendMessage(ownerJid, { forward: m }, { force: true });
+            } else {
+              await sock.sendMessage(ownerJid, { text: '🕵️ [spy] ' + time + ' +' + sender + ': [unsupported media]' });
+            }
           } catch (_) {}
         }
       }
