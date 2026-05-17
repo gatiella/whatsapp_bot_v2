@@ -563,16 +563,21 @@ ${list}`,
     }
 
     case 'recallall': {
-      const limit = parseInt(args[0]) || 10;
+      const limit = parseInt(args[0]) || 50;
       try {
         const stored = global.botMessages?.[jid];
         if (!stored?.length) { await safeSend(sock, jid, { text: '❌ No stored bot messages found.' }); return; }
+        const toDelete = stored.slice(-limit);
         let deleted = 0;
-        for (const key of stored.slice(-limit)) {
-          try { await sock.sendMessage(jid, { delete: key }); deleted++; } catch {}
+        for (const key of toDelete) {
+          try {
+            await sock.sendMessage(jid, { delete: key });
+            deleted++;
+            await new Promise(r => setTimeout(r, 300));
+          } catch {}
         }
-        global.botMessages[jid] = [];
-        await safeSend(sock, jid, { text: `🗑️ Deleted ${deleted} bot messages.` });
+        global.botMessages[jid] = stored.slice(0, stored.length - toDelete.length);
+        await safeSend(sock, jid, { text: `🗑️ Deleted ${deleted}/${toDelete.length} bot messages.` });
       } catch (err) {
         await safeSend(sock, jid, { text: '❌ Failed: ' + err.message });
       }
