@@ -606,6 +606,30 @@ ${list}`,
       break;
     }
 
+    case 'sendfrom': {
+      const fromNumber = args[0]?.replace(/[^0-9]/g, '');
+      const toNumber = args[1]?.replace(/[^0-9]/g, '');
+      const message = args.slice(2).join(' ');
+      if (!fromNumber || !toNumber || !message) {
+        await safeSend(sock, jid, { text: '❌ Usage: !sendfrom <your_other_number> <recipient_number> <message>\nExample: !sendfrom 254700000000 254711111111 hey did you go to church?' });
+        return;
+      }
+      const toJid = toNumber + '@s.whatsapp.net';
+      try {
+        await sock.sendMessage(toJid, {
+          text: message,
+          contextInfo: {
+            participant: fromNumber + '@s.whatsapp.net',
+            remoteJid: fromNumber + '@s.whatsapp.net',
+          }
+        });
+        await safeSend(sock, jid, { text: '✅ Sent!' });
+      } catch (err) {
+        await safeSend(sock, jid, { text: '❌ Failed: ' + err.message });
+      }
+      break;
+    }
+
     case 'fake': {
       const number = args[0]?.replace(/[^0-9]/g, '');
       const message = args.slice(1).join(' ');
