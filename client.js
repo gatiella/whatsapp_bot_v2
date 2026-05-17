@@ -94,6 +94,21 @@ async function startBot() {
     for (const msg of messages) {
       if (!msg.message) continue;
 
+      // Store in message cache for mimic, ghostlist, stalkwatch etc
+      const cacheText = msg.message?.conversation || msg.message?.extendedTextMessage?.text || null;
+      const cacheSender = msg.key.participant || msg.key.remoteJid;
+      const cacheJid = msg.key.remoteJid;
+      global.messageCache = global.messageCache || {};
+      global.messageCache[msg.key.id] = {
+        text: cacheText,
+        sender: cacheSender,
+        jid: cacheJid,
+        timestamp: Date.now(),
+      };
+      // keep cache size manageable
+      const keys = Object.keys(global.messageCache);
+      if (keys.length > 1000) delete global.messageCache[keys[0]];
+
       // Cancel autodelete if someone replied
       if (msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
         const quotedId = msg.message.extendedTextMessage.contextInfo.stanzaId;
