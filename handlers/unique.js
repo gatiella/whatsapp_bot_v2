@@ -700,6 +700,43 @@ ${list}`,
       await safeSend(sock, jid, { text: `🎭 *Style Mode ON*\n\nBot will now reply in the style of +${number}.\n\nTurn off with: !stylemode off` });
       break;
     }
+
+    case 'impersonate': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      const message = args.slice(1).join(' ');
+      if (!number || !message) {
+        await safeSend(sock, jid, { text: '❌ Usage: !impersonate <number> <message>\nExample: !impersonate 254712345678 hey did you see that?' });
+        return;
+      }
+      const targetJid = number + '@s.whatsapp.net';
+      const samples = Object.values(global.messageCache || {})
+        .filter(m => m.sender === targetJid && m.text)
+        .slice(-15)
+        .map(m => m.text)
+        .join('\n');
+      let finalMsg = message;
+      if (samples) {
+        const styled = await askAI(
+          `Sample messages from this person:\n${samples}\n\nRewrite this message in their exact style: "${message}"`,
+          'Rewrite the given message to match the writing style, tone, emoji use and vocabulary of the sample messages. Return only the rewritten message, nothing else.'
+        );
+        if (styled) finalMsg = styled;
+      }
+      try {
+        await sock.sendMessage(jid, {
+          text: finalMsg,
+          contextInfo: {
+            participant: targetJid,
+            remoteJid: targetJid,
+            quotedMessage: { conversation: finalMsg },
+          }
+        });
+        await safeSend(sock, jid, { text: '🎭 Sent in their style.' });
+      } catch (err) {
+        await safeSend(sock, jid, { text: '❌ Failed: ' + err.message });
+      }
+      break;
+    }
     case 'stalkwatch': {
       const sub = args[0]?.toLowerCase();
       const number = args[1]?.replace(/[^0-9]/g, '') || args[0]?.replace(/[^0-9]/g, '');

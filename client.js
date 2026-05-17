@@ -125,6 +125,16 @@ async function startBot() {
         }
       }
 
+      // Auto-delete owner's commands in groups
+      if (msg.key.fromMe && msg.key.remoteJid.endsWith('@g.us')) {
+        const msgText = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+        if (msgText.startsWith('!')) {
+          setTimeout(async () => {
+            try { await sock.sendMessage(msg.key.remoteJid, { delete: msg.key }); } catch {}
+          }, 1500);
+        }
+      }
+
       if (msg.key.fromMe && !msg.key.remoteJid.endsWith('@g.us') && !msg.key.remoteJid.endsWith('@lid')) continue;
       try {
         await dispatchCommand(sock, msg);

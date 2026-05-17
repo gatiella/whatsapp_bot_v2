@@ -66,8 +66,20 @@ async function dispatchCommand(sock, msg, store) {
     return;
   }
 
-  const [rawCmd, ...args] = text.slice(PREFIX.length).trim().split(/\s+/);
+  // Target number override — only for safe fun/output commands
+  const TARGETABLE = ['joke','seduce','compliment','pickup','rizz','roast','fact','riddle','truth','dare','spicydare','horoscope','wyr','poem','story','motivate','affirmation','caption'];
+  let targetOverride = null;
+  let cleanText = text;
+  const _parts = text.slice(PREFIX.length).trim().split(/\s+/);
+  if (_parts.length > 1 && /^\d{10,13}$/.test(_parts[1]) && TARGETABLE.includes(_parts[0].toLowerCase())) {
+    targetOverride = _parts[1] + '@s.whatsapp.net';
+    cleanText = PREFIX + _parts[0] + ' ' + _parts.slice(2).join(' ');
+  }
+
+  const [rawCmd, ...args] = cleanText.slice(PREFIX.length).trim().split(/\s+/);
   const cmd = rawCmd.toLowerCase();
+  const originalJid = msg.key.remoteJid;
+  if (targetOverride) msg.key.remoteJid = targetOverride;
 
   await react(sock, msg, '⏳');
 
@@ -113,7 +125,7 @@ async function dispatchCommand(sock, msg, store) {
     } else if (['meeting', 'email', 'cv', 'invoice', 'quiz', 'coverlettr', 'explain', 'compare', 'name', 'bio', 'caption'].includes(cmd)) {
       await handleAIPowered(sock, msg, cmd, args);
 
-    } else if (['stalk', 'phoneosint', 'stalkwatch', 'myonline', 'usersearch', 'pastebin', 'anonymous', 'ghostlist', 'autotyping', 'clone', 'fakeonline', 'lastseen', 'fake', 'recallall', 'mimic', 'ghostmode', 'busy', 'scheduledm', 'recall', 'spy', 'rizz', 'suggestreply', 'persona', 'chat', 'clearchat'].includes(cmd)) {
+    } else if (['stalk', 'phoneosint', 'stalkwatch', 'myonline', 'usersearch', 'pastebin', 'anonymous', 'ghostlist', 'autotyping', 'clone', 'fakeonline', 'lastseen', 'fake', 'impersonate', 'stylemode', 'sendfrom', 'recallall', 'mimic', 'ghostmode', 'busy', 'scheduledm', 'recall', 'spy', 'rizz', 'suggestreply', 'persona', 'chat', 'clearchat'].includes(cmd)) {
       await handleUnique(sock, msg, cmd, args);
 
     } else if (['raffle', 'inactive'].includes(cmd)) {
@@ -147,8 +159,10 @@ async function dispatchCommand(sock, msg, store) {
     await react(sock, msg, '✅');
   } catch (err) {
     logger.error(`Command error [${cmd}]:`, err);
-    await sock.sendMessage(jid, { text: `❌ Error running *${cmd}*. Try again.` });
+    await sock.sendMessage(msg.key.remoteJid, { text: `❌ Error running *${cmd}*. Try again.` });
     await react(sock, msg, '❌');
+  } finally {
+    msg.key.remoteJid = originalJid;
   }
 }
 
