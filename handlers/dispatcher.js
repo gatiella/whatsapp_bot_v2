@@ -10,7 +10,7 @@ const { handleAdmin } = require('./admin');
 const { handleSpecial, isNightModeActive } = require('./special');
 const { handleGroupExtra } = require('./group_extra');
 const { handlePersonal } = require('./personal');
-const { handleUnique } = require('./unique');
+const { handleUnique, handleAIPowered } = require('./unique');
 const { checkAutoReply } = require('../core/autoreply');
 const { checkAntiSpam } = require('../core/antispam');
 const { logMessage, isBanned } = require('../db/database');
@@ -90,6 +90,9 @@ async function dispatchCommand(sock, msg, store) {
     // Special commands
     } else if (['nightmode', 'mood', 'rate', 'confess', 'anonymous'].includes(cmd)) {
       await handleSpecial(sock, msg, cmd, args);
+
+    } else if (['meeting', 'email', 'cv', 'invoice', 'quiz', 'coverlettr', 'explain', 'compare', 'name', 'bio', 'caption'].includes(cmd)) {
+      await handleAIPowered(sock, msg, cmd, args);
 
     } else if (['stalk', 'ghostmode', 'busy', 'scheduledm', 'recall', 'spy', 'rizz', 'suggestreply', 'persona', 'chat', 'clearchat'].includes(cmd)) {
       await handleUnique(sock, msg, cmd, args);

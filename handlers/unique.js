@@ -255,3 +255,144 @@ async function handleUnique(sock, msg, cmd, args) {
 }
 
 module.exports = { handleUnique };
+
+async function handleAIPowered(sock, msg, cmd, args) {
+  const jid = getJID(msg);
+  const input = args.join(' ');
+
+  switch (cmd) {
+
+    case 'meeting': {
+      if (!input) { await safeSend(sock, jid, { text: '❌ Usage: !meeting <topic>' }); return; }
+      await safeSend(sock, jid, { text: '📋 Generating meeting agenda...' });
+      const reply = await askAI(input,
+        'Generate a professional meeting agenda for this topic. Include: objective, agenda items with time allocations, discussion points and action items. Format it cleanly.'
+      );
+      await safeSend(sock, jid, { text: reply ? `📋 *Meeting Agenda:*\n\n${reply}` : '❌ Failed to generate agenda.' });
+      break;
+    }
+
+    case 'email': {
+      if (!input) { await safeSend(sock, jid, { text: '❌ Usage: !email <topic or details>' }); return; }
+      await safeSend(sock, jid, { text: '✉️ Drafting email...' });
+      const reply = await askAI(input,
+        'Draft a professional email based on this topic or details. Include subject line, greeting, body and sign-off. Keep it clear and professional.'
+      );
+      await safeSend(sock, jid, { text: reply ? `✉️ *Email Draft:*\n\n${reply}` : '❌ Failed to draft email.' });
+      break;
+    }
+
+    case 'cv': {
+      if (!input) { await safeSend(sock, jid, { text: '❌ Usage: !cv <your details>\nExample: !cv John Doe, software developer, 3 years experience, skills: JavaScript Python' }); return; }
+      await safeSend(sock, jid, { text: '📄 Writing your CV...' });
+      const reply = await askAI(input,
+        'Write a professional CV based on these details. Include sections: Personal Info, Professional Summary, Skills, Experience, Education. Format it cleanly for WhatsApp.'
+      );
+      await safeSend(sock, jid, { text: reply ? `📄 *Your CV:*\n\n${reply}` : '❌ Failed to generate CV.' });
+      break;
+    }
+
+    case 'invoice': {
+      if (!input) { await safeSend(sock, jid, { text: '❌ Usage: !invoice <details>\nExample: !invoice Web design for John, $500, due 30 days' }); return; }
+      await safeSend(sock, jid, { text: '🧾 Generating invoice...' });
+      const reply = await askAI(input,
+        'Generate a simple professional invoice based on these details. Include: invoice number, date, item description, amount, payment terms and total. Format cleanly for WhatsApp.'
+      );
+      await safeSend(sock, jid, { text: reply ? `🧾 *Invoice:*\n\n${reply}` : '❌ Failed to generate invoice.' });
+      break;
+    }
+
+    case 'quiz': {
+      const topic = input || 'general knowledge';
+      await safeSend(sock, jid, { text: '🎯 Generating quiz...' });
+      const reply = await askAI(topic,
+        'Generate 5 multiple choice quiz questions about this topic. Number them 1-5. For each question give 4 options labeled A B C D. After all questions reveal the answers. Format cleanly.'
+      );
+      await safeSend(sock, jid, { text: reply ? `🎯 *Quiz: ${topic}*\n\n${reply}` : '❌ Failed to generate quiz.' });
+      break;
+    }
+
+    case 'roast': {
+      const target = input || 'me';
+      await safeSend(sock, jid, { text: '🔥 Roasting...' });
+      const reply = await askAI(target,
+        'Write a funny playful roast about this person or thing. Make it witty and hilarious but not mean or offensive. Use humor and sarcasm. Max 4 sentences.'
+      );
+      await safeSend(sock, jid, { text: reply ? `🔥 *Roasting ${target}:*\n\n${reply}` : '❌ Failed to roast.' });
+      break;
+    }
+
+    case 'pickup': {
+      const topic = input || 'general';
+      await safeSend(sock, jid, { text: '💘 Generating pickup line...' });
+      const reply = await askAI(topic,
+        'Generate a creative, clever and funny pickup line related to this topic. Make it charming and witty. Just return the pickup line, nothing else.'
+      );
+      await safeSend(sock, jid, { text: reply ? `💘 *Pickup Line:*\n\n"${reply}"` : '❌ Failed to generate.' });
+      break;
+    }
+
+    case 'coverlettr': {
+      if (!input) { await safeSend(sock, jid, { text: '❌ Usage: !coverlettr <job title and your details>' }); return; }
+      await safeSend(sock, jid, { text: '📝 Writing cover letter...' });
+      const reply = await askAI(input,
+        'Write a professional cover letter for this job application. Include: opening, why you are a good fit, your key skills and experience, closing. Keep it concise and compelling.'
+      );
+      await safeSend(sock, jid, { text: reply ? `📝 *Cover Letter:*\n\n${reply}` : '❌ Failed to write cover letter.' });
+      break;
+    }
+
+    case 'explain': {
+      if (!input) { await safeSend(sock, jid, { text: '❌ Usage: !explain <topic>' }); return; }
+      await safeSend(sock, jid, { text: '🧠 Explaining...' });
+      const reply = await askAI(input,
+        'Explain this topic as simply as possible, like explaining to a 10 year old. Use simple language, examples and analogies. Max 5 sentences.'
+      );
+      await safeSend(sock, jid, { text: reply ? `🧠 *${input}:*\n\n${reply}` : '❌ Failed to explain.' });
+      break;
+    }
+
+    case 'compare': {
+      if (!input) { await safeSend(sock, jid, { text: '❌ Usage: !compare <thing1> vs <thing2>' }); return; }
+      await safeSend(sock, jid, { text: '⚖️ Comparing...' });
+      const reply = await askAI(input,
+        'Compare these two things fairly. Give pros and cons of each and a final verdict. Format with clear sections. Be objective and helpful.'
+      );
+      await safeSend(sock, jid, { text: reply ? `⚖️ *Comparison:*\n\n${reply}` : '❌ Failed to compare.' });
+      break;
+    }
+
+    case 'name': {
+      if (!input) { await safeSend(sock, jid, { text: '❌ Usage: !name <description or theme>' }); return; }
+      await safeSend(sock, jid, { text: '💡 Generating names...' });
+      const reply = await askAI(input,
+        'Generate 10 creative and unique names based on this description or theme. Number them 1-10. Give a one-word reason why each name works.'
+      );
+      await safeSend(sock, jid, { text: reply ? `💡 *Name Ideas:*\n\n${reply}` : '❌ Failed to generate names.' });
+      break;
+    }
+
+    case 'bio': {
+      if (!input) { await safeSend(sock, jid, { text: '❌ Usage: !bio <your details>' }); return; }
+      await safeSend(sock, jid, { text: '✍️ Writing bio...' });
+      const reply = await askAI(input,
+        'Write a compelling social media bio based on these details. Make it catchy, professional yet personable. Under 150 characters for the main bio, then a longer version. Format for WhatsApp.'
+      );
+      await safeSend(sock, jid, { text: reply ? `✍️ *Your Bio:*\n\n${reply}` : '❌ Failed to write bio.' });
+      break;
+    }
+
+    case 'caption': {
+      if (!input) { await safeSend(sock, jid, { text: '❌ Usage: !caption <photo description or mood>' }); return; }
+      await safeSend(sock, jid, { text: '📸 Writing captions...' });
+      const reply = await askAI(input,
+        'Write 5 creative Instagram/WhatsApp status captions for this photo or mood. Make them engaging, some funny some deep. Number them 1-5. Include relevant emojis.'
+      );
+      await safeSend(sock, jid, { text: reply ? `📸 *Caption Ideas:*\n\n${reply}` : '❌ Failed to generate captions.' });
+      break;
+    }
+
+  }
+}
+
+module.exports = { handleUnique, handleAIPowered };
