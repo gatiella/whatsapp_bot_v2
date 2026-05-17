@@ -192,6 +192,156 @@ async function handleProductivity(sock, msg, cmd, args) {
   }
 }
 
+
+    case 'habit': {
+      const sub = args[0]?.toLowerCase();
+      const habitName = args.slice(1).join(' ');
+      global.habits = global.habits || {};
+      global.habits[sender] = global.habits[sender] || {};
+      if (sub === 'add') {
+        if (!habitName) { await safeSend(sock, jid, { text: '❌ Usage: !habit add <name>' }); return; }
+        global.habits[sender][habitName] = { streak: 0, lastDone: null };
+        await safeSend(sock, jid, { text: '✅ Habit added: ' + habitName });
+      } else if (sub === 'done') {
+        const habit = global.habits[sender][habitName];
+        if (!habit) { await safeSend(sock, jid, { text: '❌ Habit not found.' }); return; }
+        const today = new Date().toDateString();
+        if (habit.lastDone === today) { await safeSend(sock, jid, { text: '✅ Already done today!' }); return; }
+        habit.streak++;
+        habit.lastDone = today;
+        await safeSend(sock, jid, { text: '🔥 ' + habitName + ' done! Streak: ' + habit.streak + ' days' });
+      } else if (sub === 'list') {
+        const habits = global.habits[sender];
+        if (!habits || !Object.keys(habits).length) { await safeSend(sock, jid, { text: '📋 No habits yet.' }); return; }
+        const lines = Object.entries(habits).map(([n, h]) => '🔥 ' + n + ' — ' + h.streak + ' day streak');
+        await safeSend(sock, jid, { text: '📋 *Your Habits:*\n\n' + lines.join('\n') });
+      } else if (sub === 'delete') {
+        delete global.habits[sender][habitName];
+        await safeSend(sock, jid, { text: '✅ Habit deleted.' });
+      } else {
+        await safeSend(sock, jid, { text: 'Usage: !habit add/done/list/delete <name>' });
+      }
+      break;
+    }
+
+    case 'goal': {
+      const sub = args[0]?.toLowerCase();
+      const goalText = args.slice(1).join(' ');
+      global.goals = global.goals || {};
+      global.goals[sender] = global.goals[sender] || [];
+      if (sub === 'add') {
+        if (!goalText) { await safeSend(sock, jid, { text: '❌ Usage: !goal add <goal>' }); return; }
+        global.goals[sender].push({ text: goalText, done: false, date: new Date().toLocaleDateString() });
+        await safeSend(sock, jid, { text: '🎯 Goal added: ' + goalText });
+      } else if (sub === 'list') {
+        const goals = global.goals[sender];
+        if (!goals?.length) { await safeSend(sock, jid, { text: '🎯 No goals yet.' }); return; }
+        const lines = goals.map((g, i) => (g.done ? '✅' : '🎯') + ' ' + (i+1) + '. ' + g.text);
+        await safeSend(sock, jid, { text: '🎯 *Your Goals:*\n\n' + lines.join('\n') });
+      } else if (sub === 'done') {
+        const idx = parseInt(args[1]) - 1;
+        if (global.goals[sender][idx]) { global.goals[sender][idx].done = true; await safeSend(sock, jid, { text: '✅ Goal completed! Keep going! 🔥' }); }
+      } else if (sub === 'delete') {
+        const idx = parseInt(args[1]) - 1;
+        global.goals[sender].splice(idx, 1);
+        await safeSend(sock, jid, { text: '✅ Goal deleted.' });
+      } else {
+        await safeSend(sock, jid, { text: 'Usage: !goal add/list/done/delete' });
+      }
+      break;
+    }
+
+    case 'expense': {
+      const sub = args[0]?.toLowerCase();
+      global.expenses = global.expenses || {};
+      global.expenses[sender] = global.expenses[sender] || [];
+      if (sub === 'add') {
+        const amount = parseFloat(args[1]);
+        const desc = args.slice(2).join(' ');
+        if (!amount || !desc) { await safeSend(sock, jid, { text: '❌ Usage: !expense add <amount> <description>' }); return; }
+        global.expenses[sender].push({ amount, desc, date: new Date().toLocaleDateString() });
+        await safeSend(sock, jid, { text: '💸 Expense added: ' + desc + ' — $' + amount });
+      } else if (sub === 'list') {
+        const expenses = global.expenses[sender];
+        if (!expenses?.length) { await safeSend(sock, jid, { text: '💸 No expenses yet.' }); return; }
+        const total = expenses.reduce((s, e) => s + e.amount, 0);
+        const lines = expenses.map((e, i) => (i+1) + '. ' + e.desc + ' — $' + e.amount + ' (' + e.date + ')');
+        await safeSend(sock, jid, { text: '💸 *Expenses:*\n\n' + lines.join('\n') + '\n\n*Total: $' + total.toFixed(2) + '*' });
+      } else if (sub === 'clear') {
+        global.expenses[sender] = [];
+        await safeSend(sock, jid, { text: '✅ Expenses cleared.' });
+      } else {
+        await safeSend(sock, jid, { text: 'Usage: !expense add <amount> <desc> | list | clear' });
+      }
+      break;
+    }
+
+    case 'budget':
+      return handleProductivity(sock, msg, 'expense', ['list']);
+
+    case 'countdown': {
+      const sub = args[0]?.toLowerCase();
+      global.countdowns = global.countdowns || {};
+      global.countdowns[sender] = global.countdowns[sender] || [];
+      if (sub === 'add') {
+        const date = args[1];
+        const eventName = args.slice(2).join(' ');
+        if (!date || !eventName) { await safeSend(sock, jid, { text: '❌ Usage: !countdown add YYYY-MM-DD <event name>' }); return; }
+        const target = new Date(date);
+        if (isNaN(target)) { await safeSend(sock, jid, { text: '❌ Invalid date. Use YYYY-MM-DD' }); return; }
+        global.countdowns[sender].push({ date, eventName });
+        const days = Math.ceil((target - new Date()) / 86400000);
+        await safeSend(sock, jid, { text: '⏳ Countdown added: ' + eventName + ' in ' + days + ' days!' });
+      } else if (sub === 'list') {
+        const countdowns = global.countdowns[sender];
+        if (!countdowns?.length) { await safeSend(sock, jid, { text: '⏳ No countdowns yet.' }); return; }
+        const lines = countdowns.map((c, i) => {
+          const days = Math.ceil((new Date(c.date) - new Date()) / 86400000);
+          return (i+1) + '. ' + c.eventName + ' — ' + (days > 0 ? days + ' days left' : 'Today! 🎉');
+        });
+        await safeSend(sock, jid, { text: '⏳ *Countdowns:*\n\n' + lines.join('\n') });
+      } else {
+        await safeSend(sock, jid, { text: 'Usage: !countdown add YYYY-MM-DD <event> | list' });
+      }
+      break;
+    }
+
+    case 'pomodoro': {
+      const minutes = parseInt(args[0]) || 25;
+      await safeSend(sock, jid, { text: '🍅 *Pomodoro Started!*\n\nFocus for ' + minutes + ' minutes.\nI will notify you when done! 💪' });
+      setTimeout(async () => {
+        try {
+          await safeSend(sock, jid, { text: '⏰ *Pomodoro Complete!*\n\n🎉 Great work! Take a 5 minute break.\nType !pomodoro to start another.' });
+        } catch (_) {}
+      }, minutes * 60 * 1000);
+      break;
+    }
+
+    case 'checklist': {
+      const sub = args[0]?.toLowerCase();
+      const item = args.slice(1).join(' ');
+      global.checklists = global.checklists || {};
+      global.checklists[sender] = global.checklists[sender] || [];
+      if (sub === 'add') {
+        if (!item) { await safeSend(sock, jid, { text: '❌ Usage: !checklist add <item>' }); return; }
+        global.checklists[sender].push({ item, done: false });
+        await safeSend(sock, jid, { text: '✅ Added: ' + item });
+      } else if (sub === 'list') {
+        const list = global.checklists[sender];
+        if (!list?.length) { await safeSend(sock, jid, { text: '📋 Checklist is empty.' }); return; }
+        const lines = list.map((i, idx) => (i.done ? '☑️' : '⬜') + ' ' + (idx+1) + '. ' + i.item);
+        await safeSend(sock, jid, { text: '📋 *Checklist:*\n\n' + lines.join('\n') });
+      } else if (sub === 'done') {
+        const idx = parseInt(args[1]) - 1;
+        if (global.checklists[sender][idx]) { global.checklists[sender][idx].done = true; await safeSend(sock, jid, { text: '☑️ Item checked off!' }); }
+      } else if (sub === 'clear') {
+        global.checklists[sender] = [];
+        await safeSend(sock, jid, { text: '✅ Checklist cleared.' });
+      } else {
+        await safeSend(sock, jid, { text: 'Usage: !checklist add/list/done/clear' });
+      }
+      break;
+    }
 async function restoreSchedules(sock) {
   try {
     const schedules = await listSchedules();
@@ -205,3 +355,10 @@ async function restoreSchedules(sock) {
 }
 
 module.exports = { handleProductivity, restoreSchedules };
+
+// New productivity features
+global.habits = global.habits || {};
+global.goals = global.goals || {};
+global.expenses = global.expenses || {};
+global.countdowns = global.countdowns || {};
+global.checklists = global.checklists || {};
