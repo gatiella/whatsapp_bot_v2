@@ -449,19 +449,27 @@ ${list}`,
 
     case 'autotyping': {
       const val = args[0]?.toLowerCase();
-      if (!['on', 'off'].includes(val)) { await safeSend(sock, jid, { text: '❌ Usage: !autotyping on/off' }); return; }
+      if (!['on', 'off'].includes(val)) {
+        await safeSend(sock, jid, { text: '❌ Usage: !autotyping on/off [number1] [number2]...\nMax 5 numbers\nExample: !autotyping on 254712345678 254700000000' });
+        return;
+      }
       if (val === 'off') {
         if (global.autoTypingTimer) { clearInterval(global.autoTypingTimer); global.autoTypingTimer = null; }
         await safeSend(sock, jid, { text: '⌨️ Auto typing indicator OFF.' });
         return;
       }
+      const numbers = args.slice(1).map(n => n.replace(/[^0-9]/g, '')).filter(n => n).slice(0, 5);
+      const targets = numbers.length ? numbers.map(n => n + '@s.whatsapp.net') : [jid];
+      let idx = 0;
+      try { await sock.sendPresenceUpdate('composing', targets[0]); } catch {}
       global.autoTypingTimer = setInterval(async () => {
         try {
-          await sock.sendPresenceUpdate('composing', jid);
-          setTimeout(() => sock.sendPresenceUpdate('paused', jid), 3000);
+          await sock.sendPresenceUpdate('composing', targets[idx % targets.length]);
+          idx++;
         } catch {}
-      }, 30000);
-      await safeSend(sock, jid, { text: '⌨️ Auto typing indicator ON — bot appears active every 30s.' });
+      }, 9000);
+      const labels = numbers.length ? numbers.map(n => '+' + n).join(', ') : 'this chat';
+      await safeSend(sock, jid, { text: `⌨️ *Auto Typing ON*\n\nTargets: ${labels}\nInterval: 9s rotation\n\nStop: !autotyping off` });
       break;
     }
 
