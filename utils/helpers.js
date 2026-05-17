@@ -1,8 +1,9 @@
 function getJID(msg) {
   const jid = msg.key.remoteJid;
-  if (jid && jid.endsWith('@lid')) {
-    const number = jid.replace('@lid', '');
-    return number + '@s.whatsapp.net';
+  const alt = msg.key.remoteJidAlt;
+  // For DMs, prefer the @s.whatsapp.net version
+  if (!jid.endsWith('@g.us')) {
+    return alt || jid;
   }
   return jid;
 }
@@ -23,7 +24,8 @@ function getMentioned(msg) {
 
 async function react(sock, msg, emoji) {
   try {
-    await sock.sendMessage(msg.key.remoteJid, {
+    const jid = msg.key.remoteJidAlt || msg.key.remoteJid;
+    await sock.sendMessage(jid, {
       react: { text: emoji, key: msg.key },
     });
   } catch (_) {}
