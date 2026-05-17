@@ -189,10 +189,6 @@ async function handleProductivity(sock, msg, cmd, args) {
       });
       break;
     }
-  }
-}
-
-
     case 'habit': {
       const sub = args[0]?.toLowerCase();
       const habitName = args.slice(1).join(' ');
@@ -342,6 +338,8 @@ async function handleProductivity(sock, msg, cmd, args) {
       }
       break;
     }
+  }
+}
 async function restoreSchedules(sock) {
   try {
     const schedules = await listSchedules();

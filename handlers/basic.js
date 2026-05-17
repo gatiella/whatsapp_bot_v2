@@ -35,74 +35,161 @@ async function handleBasic(sock, msg, cmd, args) {
       break;
     case 'info':
       await safeSend(sock, jid, {
-        text: `🤖 *xssrat Bot v2.0*\n\n• Prefix: *${PREFIX}*\n• Platform: Node.js + Baileys\n• Features: 100+ commands\n\nType *${PREFIX}help* for all commands.`,
+        text: `╔═══════════════════╗\n` +
+              `║   🤖 *xssrat Bot v2.0*   ║\n` +
+              `╚═══════════════════╝\n\n` +
+              `┌─────────────────────\n` +
+              `│ 🔧 Prefix: *${PREFIX}*\n` +
+              `│ 💻 Platform: Node.js + Baileys\n` +
+              `│ ⚡ Commands: *100+*\n` +
+              `│ 🤖 AI: OpenRouter powered\n` +
+              `│ 👑 Owner: xssrat\n` +
+              `└─────────────────────\n\n` +
+              `Type *${PREFIX}help* to see all commands.`,
       });
       break;
     case 'help':
       await safeSend(sock, jid, {
-        text: `📋 *xssrat Bot — Commands (1/6)*\n\n` +
-          `*🔧 Basic*\n${PREFIX}ping, ${PREFIX}uptime, ${PREFIX}info, ${PREFIX}echo, ${PREFIX}id\n\n` +
-          `*👥 Group (Admin)*\n${PREFIX}kick, ${PREFIX}add, ${PREFIX}promote, ${PREFIX}demote\n` +
-          `${PREFIX}rename, ${PREFIX}members, ${PREFIX}welcome on/off\n` +
-          `${PREFIX}antispam on/off, ${PREFIX}antilink on/off\n` +
-          `${PREFIX}poll <q>|opt1|opt2, ${PREFIX}warn @user, ${PREFIX}mute\n` +
-          `${PREFIX}tagall, ${PREFIX}rules, ${PREFIX}setrules, ${PREFIX}vote, ${PREFIX}leaderboard`,
+        text: `╔═══════════════════╗\n` +
+              `║  📋 *xssrat Bot Commands*  ║\n` +
+              `╚═══════════════════╝\n\n` +
+              `*[1/6] 🔧 BASIC & GROUP*\n` +
+              `━━━━━━━━━━━━━━━━━━━\n` +
+              `• ${PREFIX}ping — Check bot speed\n` +
+              `• ${PREFIX}uptime — Bot online time\n` +
+              `• ${PREFIX}info — Bot information\n` +
+              `• ${PREFIX}id — Get chat ID\n` +
+              `• ${PREFIX}echo <text> — Repeat text\n\n` +
+              `*👥 Group Management*\n` +
+              `• ${PREFIX}kick/add/promote/demote\n` +
+              `• ${PREFIX}rename/members/warn\n` +
+              `• ${PREFIX}welcome/antispam/antilink on/off\n` +
+              `• ${PREFIX}mute/poll/tagall\n` +
+              `• ${PREFIX}rules/setrules/vote\n` +
+              `• ${PREFIX}leaderboard/raffle\n` +
+              `• ${PREFIX}inactive <days>`,
       });
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 800));
       await safeSend(sock, jid, {
-        text: `📋 *xssrat Bot — Commands (2/6)*\n\n` +
-          `*🎬 Media*\n${PREFIX}sticker, ${PREFIX}toimg, ${PREFIX}ytdl <url>\n` +
-          `${PREFIX}igdl <url>, ${PREFIX}ttdl <url>, ${PREFIX}ocr\n` +
-          `${PREFIX}compress, ${PREFIX}meme, ${PREFIX}audio\n\n` +
-          `*🤖 AI*\n${PREFIX}ask <q>, ${PREFIX}ai <q>, ${PREFIX}summarize <text>\n` +
-          `${PREFIX}translate <lang> <text>, ${PREFIX}code <q>\n` +
-          `${PREFIX}sentiment <text>, ${PREFIX}imagine <prompt>\n` +
-          `${PREFIX}advice <topic>, ${PREFIX}story <topic>\n` +
-          `${PREFIX}poem <topic>, ${PREFIX}recipe <dish>\n` +
-          `${PREFIX}debate <topic>, ${PREFIX}roastai <name>`,
+        text: `*[2/6] 🤖 AI COMMANDS*\n` +
+              `━━━━━━━━━━━━━━━━━━━\n` +
+              `• ${PREFIX}ask <question> — Ask anything\n` +
+              `• ${PREFIX}ai <question> — AI assistant\n` +
+              `• ${PREFIX}summarize <text> — Summarize\n` +
+              `• ${PREFIX}translate <lang> <text>\n` +
+              `• ${PREFIX}code <question> — Code help\n` +
+              `• ${PREFIX}sentiment <text> — Mood check\n` +
+              `• ${PREFIX}imagine <prompt> — Visualize\n` +
+              `• ${PREFIX}advice <topic> — Life advice\n` +
+              `• ${PREFIX}story <topic> — Short story\n` +
+              `• ${PREFIX}poem <topic> — Write poem\n` +
+              `• ${PREFIX}recipe <dish> — Get recipe\n` +
+              `• ${PREFIX}debate <topic> — Both sides\n` +
+              `• ${PREFIX}explain <topic> — Simplify\n` +
+              `• ${PREFIX}compare <x> vs <y>\n` +
+              `• ${PREFIX}chat <message> — AI memory chat\n` +
+              `• ${PREFIX}persona <type> — Set AI style\n` +
+              `• ${PREFIX}clearchat — Reset AI memory`,
       });
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 800));
       await safeSend(sock, jid, {
-        text: `📋 *xssrat Bot — Commands (3/6)*\n\n` +
-          `*🎮 Fun*\n${PREFIX}joke, ${PREFIX}fact, ${PREFIX}trivia, ${PREFIX}riddle\n` +
-          `${PREFIX}8ball <q>, ${PREFIX}horoscope <sign>\n` +
-          `${PREFIX}truth, ${PREFIX}dare, ${PREFIX}spicydare\n` +
-          `${PREFIX}compliment, ${PREFIX}seduce, ${PREFIX}couple, ${PREFIX}wyr\n` +
-          `${PREFIX}pickup, ${PREFIX}roast <name>, ${PREFIX}loveadvice\n` +
-          `${PREFIX}lovemeter <n1> <n2>, ${PREFIX}shipname <n1> <n2>\n` +
-          `${PREFIX}spin, ${PREFIX}rps, ${PREFIX}coinflip`,
+        text: `*[3/6] 🎮 FUN & RELATIONSHIPS*\n` +
+              `━━━━━━━━━━━━━━━━━━━\n` +
+              `• ${PREFIX}joke/fact/riddle/trivia\n` +
+              `• ${PREFIX}8ball <question>\n` +
+              `• ${PREFIX}horoscope <sign>\n` +
+              `• ${PREFIX}truth/dare/spicydare\n` +
+              `• ${PREFIX}spin/rps/coinflip\n\n` +
+              `*💕 Couples & Flirt*\n` +
+              `• ${PREFIX}seduce — Flirt line\n` +
+              `• ${PREFIX}pickup — Pickup line\n` +
+              `• ${PREFIX}compliment — Sweet compliment\n` +
+              `• ${PREFIX}couple — Couple challenge\n` +
+              `• ${PREFIX}wyr — Would you rather\n` +
+              `• ${PREFIX}lovemeter <n1> <n2>\n` +
+              `• ${PREFIX}shipname <n1> <n2>\n` +
+              `• ${PREFIX}loveadvice — Relationship tips\n` +
+              `• ${PREFIX}roast <name> — Funny roast\n` +
+              `• ${PREFIX}rizz <their msg> — Best rizz\n` +
+              `• ${PREFIX}suggestreply <msg>`,
       });
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 800));
       await safeSend(sock, jid, {
-        text: `📋 *xssrat Bot — Commands (4/6)*\n\n` +
-          `*🌍 Info & Utils*\n${PREFIX}weather <city>, ${PREFIX}news <topic>\n` +
-          `${PREFIX}crypto <coin>, ${PREFIX}stock <sym>\n` +
-          `${PREFIX}define <word>, ${PREFIX}calc <expr>\n` +
-          `${PREFIX}convert <val> <from> to <to>\n` +
-          `${PREFIX}qr <text>, ${PREFIX}password <len>, ${PREFIX}time <city>\n` +
-          `${PREFIX}ip <address>, ${PREFIX}whois <domain>\n\n` +
-          `*✨ Special*\n${PREFIX}nightmode on/off, ${PREFIX}mood <text>\n` +
-          `${PREFIX}rate <thing>, ${PREFIX}confess <msg>\n` +
-          `${PREFIX}anonymous <msg>`,
+        text: `*[4/6] 🌍 INFO & UTILITIES*\n` +
+              `━━━━━━━━━━━━━━━━━━━\n` +
+              `• ${PREFIX}weather <city>\n` +
+              `• ${PREFIX}news <topic>\n` +
+              `• ${PREFIX}crypto <coin>\n` +
+              `• ${PREFIX}stock <symbol>\n` +
+              `• ${PREFIX}define <word>\n` +
+              `• ${PREFIX}calc <expression>\n` +
+              `• ${PREFIX}convert <val> <from> to <to>\n` +
+              `• ${PREFIX}qr <text> — Generate QR\n` +
+              `• ${PREFIX}password <length>\n` +
+              `• ${PREFIX}time <city/timezone>\n` +
+              `• ${PREFIX}ip <address>\n\n` +
+              `*✍️ Writing Tools*\n` +
+              `• ${PREFIX}grammar <text>\n` +
+              `• ${PREFIX}rewrite <text>\n` +
+              `• ${PREFIX}emoji <text>\n` +
+              `• ${PREFIX}summarizelink <url>\n` +
+              `• ${PREFIX}bio <your details>\n` +
+              `• ${PREFIX}caption <description>\n` +
+              `• ${PREFIX}name <theme>`,
       });
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 800));
       await safeSend(sock, jid, {
-        text: `📋 *xssrat Bot — Commands (5/6)*\n\n` +
-          `*🧠 Personal*\n${PREFIX}journal <entry>, ${PREFIX}myjournal\n` +
-          `${PREFIX}motivate <topic>, ${PREFIX}vent <text>\n` +
-          `${PREFIX}affirmation, ${PREFIX}grammar <text>\n` +
-          `${PREFIX}rewrite <text>, ${PREFIX}emoji <text>\n` +
-          `${PREFIX}summarizelink <url>\n\n` +
-          `*📝 Productivity*\n${PREFIX}remind <time> <msg>, ${PREFIX}todo add/list/done\n` +
-          `${PREFIX}note save/get/list, ${PREFIX}broadcast <msg>\n` +
-          `${PREFIX}schedule <cron> <msg>, ${PREFIX}stats, ${PREFIX}autoreply`,
+        text: `*[5/6] 📝 PRODUCTIVITY*\n` +
+              `━━━━━━━━━━━━━━━━━━━\n` +
+              `• ${PREFIX}remind <time> <msg>\n` +
+              `• ${PREFIX}todo add/list/done\n` +
+              `• ${PREFIX}note save/get/list\n` +
+              `• ${PREFIX}habit add/done/list\n` +
+              `• ${PREFIX}goal add/list/done\n` +
+              `• ${PREFIX}expense add/list/clear\n` +
+              `• ${PREFIX}budget — Expense summary\n` +
+              `• ${PREFIX}countdown add/list\n` +
+              `• ${PREFIX}pomodoro <minutes>\n` +
+              `• ${PREFIX}checklist add/list/done\n` +
+              `• ${PREFIX}schedule add/list/delete\n` +
+              `• ${PREFIX}broadcast all/list/groups\n` +
+              `• ${PREFIX}stats — Bot statistics\n\n` +
+              `*💼 Professional*\n` +
+              `• ${PREFIX}meeting <topic>\n` +
+              `• ${PREFIX}email <topic>\n` +
+              `• ${PREFIX}cv <your details>\n` +
+              `• ${PREFIX}invoice <details>\n` +
+              `• ${PREFIX}coverlettr <job/details>`,
       });
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 800));
       await safeSend(sock, jid, {
-        text: `📋 *xssrat Bot — Commands (6/6)*\n\n` +
-          `*🔐 Admin*\n${PREFIX}setprefix, ${PREFIX}ban, ${PREFIX}unban\n` +
-          `${PREFIX}addkeyword, ${PREFIX}delkeyword, ${PREFIX}keywords, ${PREFIX}logs\n\n` +
-          `*💡 Tips*\n• Bot auto-replies to keywords\n• AI responds to any message\n• Use ${PREFIX}nightmode on for flirty mode after 10pm 🌙\n• All commands work in DMs and groups`,
+        text: `*[6/6] ✨ SPECIAL & ADMIN*\n` +
+              `━━━━━━━━━━━━━━━━━━━\n` +
+              `*🕵️ Special Modes*\n` +
+              `• ${PREFIX}nightmode on/off — Flirty after 10pm\n` +
+              `• ${PREFIX}ghostmode on/off — Read silently\n` +
+              `• ${PREFIX}busy <message>/off\n` +
+              `• ${PREFIX}spy on/off — Forward group msgs\n` +
+              `• ${PREFIX}stalk <number>\n` +
+              `• ${PREFIX}mood <text> — Detect mood\n` +
+              `• ${PREFIX}rate <anything>\n` +
+              `• ${PREFIX}confess <msg> — Anonymous\n` +
+              `• ${PREFIX}anonymous <msg>\n` +
+              `• ${PREFIX}scheduledm <num> <time> <msg>\n` +
+              `• ${PREFIX}recall — Delete last message\n` +
+              `• ${PREFIX}autodelete <hours>\n\n` +
+              `*🧠 Personal*\n` +
+              `• ${PREFIX}journal/myjournal\n` +
+              `• ${PREFIX}motivate/vent/affirmation\n\n` +
+              `*🔐 Admin Only*\n` +
+              `• ${PREFIX}ban/unban <number>\n` +
+              `• ${PREFIX}setprefix <symbol>\n` +
+              `• ${PREFIX}addkeyword/delkeyword\n` +
+              `• ${PREFIX}keywords/logs\n\n` +
+              `━━━━━━━━━━━━━━━━━━━\n` +
+              `💡 *Tips:* Bot auto-replies with AI\n` +
+              `🌙 Try *${PREFIX}nightmode on* after 10pm\n` +
+              `🤖 *${PREFIX}chat* for memory conversations`,
       });
       break;
   }
