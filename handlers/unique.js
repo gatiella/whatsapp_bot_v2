@@ -630,6 +630,38 @@ ${list}`,
       }
       break;
     }
+
+    case 'stylemode': {
+      const sub = args[0]?.toLowerCase();
+      const number = args[1]?.replace(/[^0-9]/g, '');
+
+      if (sub === 'off') {
+        global.styleMode = null;
+        await safeSend(sock, jid, { text: '🎭 Style mode OFF — bot back to normal.' });
+        return;
+      }
+
+      if (!number) {
+        await safeSend(sock, jid, { text: '❌ Usage:\n!stylemode on <number> — reply as that person\'s style\n!stylemode off — stop' });
+        return;
+      }
+
+      const targetJid = number + '@s.whatsapp.net';
+      const samples = Object.values(global.messageCache || {})
+        .filter(m => m.sender === targetJid && m.text)
+        .slice(-20)
+        .map(m => m.text)
+        .join('\n');
+
+      if (!samples) {
+        await safeSend(sock, jid, { text: '⚠️ No cached messages from that number yet. They need to send messages to the bot first.' });
+        return;
+      }
+
+      global.styleMode = { jid: targetJid, samples, number };
+      await safeSend(sock, jid, { text: `🎭 *Style Mode ON*\n\nBot will now reply in the style of +${number}.\n\nTurn off with: !stylemode off` });
+      break;
+    }
     case 'stalkwatch': {
       const sub = args[0]?.toLowerCase();
       const number = args[1]?.replace(/[^0-9]/g, '') || args[0]?.replace(/[^0-9]/g, '');
@@ -1007,4 +1039,4 @@ async function handleAIPowered(sock, msg, cmd, args) {
   }
 }
 
-module.exports = { handleUnique, handleAIPowered };
+module.exports = { handleUnique, handleAIPowered, askAI };

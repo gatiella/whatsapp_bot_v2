@@ -41,6 +41,20 @@ async function dispatchCommand(sock, msg, store) {
     if (spammed) return;
   }
 
+  // Style mode — reply as someone's style
+  if (!text.startsWith(PREFIX) && global.styleMode) {
+    try {
+      const { samples } = global.styleMode;
+      const { askAI } = require('./unique');
+      const reply = await askAI(
+        `Sample messages from this person:\n${samples}\n\nReply to this message in their exact style: "${text}"`,
+        'You are replying as a specific person. Match their writing style, tone, vocabulary, emoji use and sentence length exactly from the samples. Return only the reply, nothing else.'
+      );
+      if (reply) await sock.sendMessage(jid, { text: reply });
+    } catch {}
+    return;
+  }
+
   // Check auto-reply keywords (non-command messages)
   if (!text.startsWith(PREFIX)) {
     await checkAutoReply(sock, msg, text, jid);
