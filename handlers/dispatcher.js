@@ -31,7 +31,8 @@ async function dispatchCommand(sock, msg, store) {
 
   // Block all group messages unless group is explicitly enabled
   global.enabledGroups = global.enabledGroups || {};
-  if (isGroup && !global.enabledGroups[jid]) return;
+  const groupCmd = text.slice(PREFIX.length).trim().split(/\s+/)[0]?.toLowerCase();
+  if (isGroup && !global.enabledGroups[jid] && !['groupon'].includes(groupCmd)) return;
 
   // Log message to DB
   await logMessage(jid, sender, text);
