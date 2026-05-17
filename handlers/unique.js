@@ -60,30 +60,225 @@ async function handleUnique(sock, msg, cmd, args) {
         const jidToCheck = number + '@s.whatsapp.net';
         const [result] = await sock.onWhatsApp(jidToCheck);
         if (!result?.exists) {
-          await safeSend(sock, jid, { text: `❌ *+${number}* is not on WhatsApp.` });
+          await safeSend(sock, jid, { text: `⚠️ *+${number}* is not on WhatsApp.\n\n🔍 Try searching manually:\n• https://www.truecaller.com/search/ke/${number}\n• https://www.facebook.com/search/people/?q=${number}` });
           return;
         }
+
+        let text = `🕵️ *Stalk Report*\n\n📱 Number: *+${number}*\n✅ On WhatsApp: Yes`;
+
+        // Last seen / online
+        try {
+          const presence = await sock.fetchPresenceUpdates(jidToCheck);
+          if (presence?.lastKnownPresence === 'available') {
+            text += `\n🟢 Status: Online`;
+          } else if (presence?.lastSeen) {
+            text += `\n🕐 Last seen: ${new Date(presence.lastSeen * 1000).toLocaleString()}`;
+          } else {
+            text += `\n🕐 Last seen: Hidden`;
+          }
+        } catch { text += `\n🕐 Last seen: Hidden`; }
+
+        // About / status
         try {
           const profile = await sock.fetchStatus(jidToCheck);
-          const ppUrl = await sock.profilePictureUrl(jidToCheck, 'image').catch(() => null);
-          let text = `🕵️ *Stalk Report*\n\n📱 Number: *+${number}*\n✅ On WhatsApp: Yes`;
-          if (profile?.status) text += `\n📝 Status: _${profile.status}_`;
-          if (profile?.setAt) text += `\n🕐 Last updated: ${new Date(profile.setAt).toLocaleDateString()}`;
-          if (ppUrl) {
-            await sock.sendMessage(jid, { image: { url: ppUrl }, caption: text });
-          } else {
-            text += '\n🖼️ Profile picture: Hidden';
-            await safeSend(sock, jid, { text });
+          if (profile?.status) text += `\n📝 About: _${profile.status}_`;
+          if (profile?.setAt) text += `\n🗓️ About updated: ${new Date(profile.setAt).toLocaleDateString()}`;
+        } catch {}
+
+        // Business profile
+        try {
+          const biz = await sock.getBusinessProfile(jidToCheck);
+          if (biz) {
+            if (biz.description) text += `\n🏢 Business: ${biz.description}`;
+            if (biz.category) text += `\n📂 Category: ${biz.category}`;
+            if (biz.email) text += `\n📧 Email: ${biz.email}`;
+            if (biz.website?.length) text += `\n🌐 Website: ${biz.website[0]}`;
           }
-        } catch {
-          await safeSend(sock, jid, { text: `🕵️ *+${number}* is on WhatsApp but their profile is private.` });
+        } catch {}
+
+        // Country from prefix
+        const cc = number.slice(0, number.length > 11 ? 3 : number.length > 10 ? 3 : 2);
+        const countries = {'254':'🇰🇪 Kenya','255':'🇹🇿 Tanzania','256':'🇺🇬 Uganda','251':'🇪🇹 Ethiopia','234':'🇳🇬 Nigeria','27':'🇿🇦 South Africa','1':'🇺🇸 US/Canada','44':'🇬🇧 UK','91':'🇮🇳 India','86':'🇨🇳 China','49':'🇩🇪 Germany','33':'🇫🇷 France'};
+        const country = countries[number.slice(0,3)] || countries[number.slice(0,2)] || '🌍 Unknown';
+        text += `\n🌍 Country: ${country}`;
+
+        // Account type
+        text += `\n👤 Type: ${result.isBusiness ? '🏢 Business' : '👤 Personal'}`;
+
+        // Mutual groups
+        try {
+          const groups = await sock.groupFetchAllParticipating();
+          const mutual = Object.values(groups).filter(g =>
+            g.participants?.some(p => p.id === jidToCheck || p.id === result.lid)
+          ).map(g => g.subject);
+          if (mutual.length) {
+            text += `\n👥 Mutual groups (${mutual.length}): ${mutual.slice(0, 3).join(', ')}${mutual.length > 3 ? ` +${mutual.length - 3} more` : ''}`;
+          } else {
+            text += `\n👥 Mutual groups: None`;
+          }
+        } catch {}
+
+        // Blocked check
+        try {
+          const blocklist = await sock.fetchBlocklist();
+          const isBlocked = blocklist?.some(b => b === jidToCheck);
+          if (isBlocked) text += `\n🚫 You have blocked this number`;
+        } catch {}
+
+        // WhatsApp LID
+        if (result.lid) text += `\n🔢 WA ID: ${result.lid}`;
+
+        // Push name
+        if (result.name) text += `\n📛 Name: ${result.name}`;
+
+        // Direct link
+        text += `\n🔗 Link: https://wa.me/${number}`;
+
+        // Profile picture (high-res fallback to low-res)
+        const ppUrl = await sock.profilePictureUrl(jidToCheck, 'image').catch(() =>
+          sock.profilePictureUrl(jidToCheck, 'preview').catch(() => null)
+        );
+        if (ppUrl) {
+          await sock.sendMessage(jid, { image: { url: ppUrl }, caption: text });
+        } else {
+          text += `\n🖼️ Profile pic: Hidden`;
+          await safeSend(sock, jid, { text });
         }
+
       } catch (err) {
         await safeSend(sock, jid, { text: '❌ Stalk failed: ' + err.message });
       }
       break;
     }
 
+
+
+    case 'myonline': {
+      const sub = args[0]?.toLowerCase();
+      const ownerJid = process.env.OWNER_NUMBER + '@s.whatsapp.net';
+
+      if (sub === 'stop') {
+        if (global.selfMonitor) {
+          clearInterval(global.selfMonitor.timer);
+          global.selfMonitor = null;
+        }
+        await safeSend(sock, jid, { text: '🛑 Self monitor stopped.' });
+        return;
+      }
+
+      if (sub === 'report') {
+        if (!global.selfMonitorLog?.length) {
+          await safeSend(sock, jid, { text: '📊 No activity logged yet.' });
+          return;
+        }
+        const log = global.selfMonitorLog.slice(-10).reverse().map(e =>
+          `${e.type === 'online' ? '🟢' : '🔴'} ${e.type.toUpperCase()} — ${e.time}${e.duration ? ' (was online ' + e.duration + ' min)' : ''}`
+        ).join('\n');
+        const totalSessions = global.selfMonitorLog.filter(e => e.type === 'offline' && e.duration).length;
+        const totalMins = global.selfMonitorLog.filter(e => e.type === 'offline' && e.duration).reduce((a, e) => a + e.duration, 0);
+        await safeSend(sock, jid, { text: `📊 *My Activity Report*\n\n${log}\n\n⏱️ Total sessions: ${totalSessions}\n🕐 Total online time: ${totalMins} min` });
+        return;
+      }
+
+      if (global.selfMonitor) {
+        await safeSend(sock, jid, { text: '⚠️ Already monitoring your number.' });
+        return;
+      }
+
+      global.selfMonitorLog = global.selfMonitorLog || [];
+      let sessionStart = null;
+
+      sock.ev.on('presence.update', async ({ id, presences }) => {
+        if (id !== ownerJid) return;
+        const p = presences[ownerJid];
+        if (!p) return;
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString();
+        if (p.lastKnownPresence === 'available' && !sessionStart) {
+          sessionStart = now;
+          global.selfMonitorLog.push({ type: 'online', time: timeStr });
+          if (global.selfMonitorLog.length > 100) global.selfMonitorLog.shift();
+        } else if (p.lastKnownPresence === 'unavailable' && sessionStart) {
+          const duration = Math.round((now - sessionStart) / 60000);
+          global.selfMonitorLog.push({ type: 'offline', time: timeStr, duration });
+          sessionStart = null;
+        }
+      });
+
+      global.selfMonitor = {
+        timer: setInterval(async () => {
+          try { await sock.subscribePresence(ownerJid); } catch {}
+        }, 30000)
+      };
+
+      try { await sock.subscribePresence(ownerJid); } catch {}
+      await safeSend(sock, jid, { text: `📡 *Monitoring your own number*\n\nTracking your online/offline activity silently.\n\n• !myonline report — see activity log\n• !myonline stop — stop monitoring` });
+      break;
+    }
+    case 'stalkwatch': {
+      const sub = args[0]?.toLowerCase();
+      const number = args[1]?.replace(/[^0-9]/g, '') || args[0]?.replace(/[^0-9]/g, '');
+
+      if (sub === 'stop') {
+        if (global.stalkWatchers) {
+          Object.keys(global.stalkWatchers).forEach(k => {
+            clearInterval(global.stalkWatchers[k].timer);
+          });
+          global.stalkWatchers = {};
+        }
+        await safeSend(sock, jid, { text: '🛑 All stalk watchers stopped.' });
+        return;
+      }
+
+      if (!number || isNaN(number)) {
+        await safeSend(sock, jid, { text: '❌ Usage:\n!stalkwatch <number> — start watching\n!stalkwatch stop — stop all' });
+        return;
+      }
+
+      global.stalkWatchers = global.stalkWatchers || {};
+      const targetJid = number + '@s.whatsapp.net';
+      const ownerJid = process.env.OWNER_NUMBER + '@s.whatsapp.net';
+
+      if (global.stalkWatchers[number]) {
+        await safeSend(sock, jid, { text: `⚠️ Already watching *+${number}*` });
+        return;
+      }
+
+      let wasOnline = false;
+      let sessionStart = null;
+      global.stalkWatchers[number] = {
+        timer: setInterval(async () => {
+          try {
+            await sock.subscribePresence(targetJid);
+          } catch {}
+        }, 30000)
+      };
+
+      sock.ev.on('presence.update', async ({ id, presences }) => {
+        if (id !== targetJid) return;
+        const p = presences[targetJid];
+        if (!p) return;
+        const now = new Date();
+        if (p.lastKnownPresence === 'available' && !wasOnline) {
+          wasOnline = true;
+          sessionStart = now;
+          await sock.sendMessage(ownerJid, {
+            text: `👁️ *Stalk Alert*\n\n📱 +${number} just came *ONLINE*\n🕐 Time: ${now.toLocaleTimeString()}`
+          });
+        } else if (p.lastKnownPresence === 'unavailable' && wasOnline) {
+          wasOnline = false;
+          const duration = sessionStart ? Math.round((now - sessionStart) / 60000) : '?';
+          await sock.sendMessage(ownerJid, {
+            text: `👁️ *Stalk Alert*\n\n📱 +${number} went *OFFLINE*\n🕐 Time: ${now.toLocaleTimeString()}\n⏱️ Was online for: ${duration} min`
+          });
+          sessionStart = null;
+        }
+      });
+
+      try { await sock.subscribePresence(targetJid); } catch {}
+      await safeSend(sock, jid, { text: `👁️ *Watching +${number}*\n\nYou'll get a DM whenever they go online or offline.\n\nStop with: !stalkwatch stop` });
+      break;
+    }
     case 'ghostmode': {
       const val = args[0]?.toLowerCase();
       if (!['on', 'off'].includes(val)) { await safeSend(sock, jid, { text: '❌ Usage: !ghostmode on/off' }); return; }
