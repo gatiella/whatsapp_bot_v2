@@ -216,3 +216,12 @@ module.exports = {
   getRecentLogs, getMessageStats, getStats,
   saveSchedule, listSchedules, deleteSchedule,
 };
+
+function getInactiveMembers(jid, days) {
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+  return db.prepare(
+    'SELECT DISTINCT sender FROM messages WHERE jid=? AND time > ?'
+  ).all(jid, since);
+}
+
+module.exports = { ...module.exports, getInactiveMembers };

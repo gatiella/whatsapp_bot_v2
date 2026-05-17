@@ -8,7 +8,7 @@ const { handleInfo } = require('./info');
 const { handleProductivity } = require('./productivity');
 const { handleAdmin } = require('./admin');
 const { handleSpecial, isNightModeActive } = require('./special');
-const { handleGroupExtra } = require('./group_extra');
+const { handleGroupExtra, handleGroupGames } = require('./group_extra');
 const { handlePersonal } = require('./personal');
 const { handleUnique, handleAIPowered } = require('./unique');
 const { checkAutoReply } = require('../core/autoreply');
@@ -96,6 +96,9 @@ async function dispatchCommand(sock, msg, store) {
 
     } else if (['stalk', 'ghostmode', 'busy', 'scheduledm', 'recall', 'spy', 'rizz', 'suggestreply', 'persona', 'chat', 'clearchat'].includes(cmd)) {
       await handleUnique(sock, msg, cmd, args);
+
+    } else if (['raffle', 'inactive'].includes(cmd)) {
+      await handleGroupGames(sock, msg, cmd, args);
 
     } else if (['tagall', 'rules', 'setrules', 'vote', 'leaderboard'].includes(cmd)) {
       await handleGroupExtra(sock, msg, cmd, args);
