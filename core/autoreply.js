@@ -66,6 +66,10 @@ async function checkAutoReply(sock, msg, text, jid) {
     } catch (_) {}
   }
 
+  // Only auto-reply to DMs if explicitly enabled
+  const isDM = !jid.endsWith('@g.us');
+  if (isDM && process.env.AUTO_REPLY_DM !== 'true') return;
+
   const reply = getKeywordReply(text);
   const persona = global.personas?.[jid] || null;
   const isNight = isNightModeActive(jid);
