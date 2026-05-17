@@ -432,8 +432,7 @@ async function handleUnique(sock, msg, cmd, args) {
           await safeSend(sock, jid, { text: `✅ No ghosts found in the last ${days} days.` });
           return;
         }
-        const list = ghosts.map((p, i) => `${i+1}. @${p.id.replace('@s.whatsapp.net','').replace('@lid','')}`).join('
-');
+        const list = ghosts.map((p, i) => `${i+1}. @${p.id.replace('@s.whatsapp.net','').replace('@lid','')}`).join('\n');
         await sock.sendMessage(jid, {
           text: `👻 *Ghost Members (${days} days)*
 ${ghosts.length} inactive members:
@@ -485,9 +484,8 @@ ${list}`,
           done.push('🖼️ Profile picture cloned');
         }
         if (!done.length) await safeSend(sock, jid, { text: '⚠️ Nothing to clone — target profile is private.' });
-        else await safeSend(sock, jid, { text: '✅ *Cloned:*
+        else await safeSend(sock, jid, { text: '✅ *Cloned:*\n' + done.join('\n') });
 ' + done.join('
-') });
       } catch (err) {
         await safeSend(sock, jid, { text: '❌ Clone failed: ' + err.message });
       }
