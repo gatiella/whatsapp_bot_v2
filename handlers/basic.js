@@ -7,15 +7,12 @@ const startTime = Date.now();
 
 async function handleBasic(sock, msg, cmd, args) {
   const jid = getJID(msg);
-  const isGroup = jid.endsWith('@g.us');
-  if (!isGroup) await new Promise(r => setTimeout(r, 3000));
   const P = config.PREFIX;
 
   switch (cmd) {
     case 'ping': {
       const t = Date.now();
-      await safeSend(sock, jid, { text: '🏓 Pong!' });
-      await safeSend(sock, jid, { text: '⚡ Latency: *' + (Date.now() - t) + 'ms*' });
+      await safeSend(sock, jid, { text: '🏓 Pong! ⚡ ' + (Date.now() - t) + 'ms' });
       break;
     }
     case 'uptime': {
@@ -31,7 +28,7 @@ async function handleBasic(sock, msg, cmd, args) {
       await safeSend(sock, jid, { text: args.join(' ') });
       break;
     case 'id':
-      await safeSend(sock, jid, { text: '📌 Chat ID:\n' + jid });
+      await safeSend(sock, jid, { text: '📌 ' + jid });
       break;
     case 'info':
       await safeSend(sock, jid, {
@@ -43,130 +40,84 @@ async function handleBasic(sock, msg, cmd, args) {
               '│ ⚡ Commands: *100+*\n' +
               '│ 🤖 AI: OpenRouter\n' +
               '│ 👑 Owner: xssrat\n\n' +
-              'Type *' + P + 'help* for all commands.',
+              'Type *' + P + 'menu* for all commands.',
       });
       break;
     case 'help':
+    case 'menu': {
       await safeSend(sock, jid, {
-        text: '╔═══════════════════╗\n' +
-              '║  📋 *xssrat Bot — Help*  ║\n' +
-              '╚═══════════════════╝\n\n' +
-              '*[1/6] 🔧 BASIC & GROUP*\n' +
-              '━━━━━━━━━━━━━━━━━━━\n' +
-              P + 'ping, ' + P + 'uptime, ' + P + 'info, ' + P + 'id, ' + P + 'echo\n\n' +
-              '*👥 Group*\n' +
-              P + 'kick, ' + P + 'add, ' + P + 'promote, ' + P + 'demote\n' +
-              P + 'rename, ' + P + 'members, ' + P + 'warn, ' + P + 'mute\n' +
-              P + 'welcome, ' + P + 'antispam, ' + P + 'antilink\n' +
-              P + 'poll, ' + P + 'tagall, ' + P + 'rules, ' + P + 'setrules\n' +
-              P + 'vote, ' + P + 'leaderboard, ' + P + 'raffle, ' + P + 'inactive',
-      });
-      await new Promise(r => setTimeout(r, 800));
-      await safeSend(sock, jid, {
-        text: '*[2/6] 🤖 AI COMMANDS*\n' +
-              '━━━━━━━━━━━━━━━━━━━\n' +
-              P + 'ask, ' + P + 'ai, ' + P + 'summarize\n' +
-              P + 'translate <lang> <text>\n' +
-              P + 'code, ' + P + 'sentiment, ' + P + 'imagine\n' +
-              P + 'advice, ' + P + 'story, ' + P + 'poem\n' +
-              P + 'recipe, ' + P + 'debate, ' + P + 'explain\n' +
-              P + 'compare <x> vs <y>\n' +
-              P + 'chat — AI with memory\n' +
-              P + 'persona <sassy/funny/wise/flirty/serious>\n' +
-              P + 'clearchat — Reset AI memory',
-      });
-      await new Promise(r => setTimeout(r, 800));
-      await safeSend(sock, jid, {
-        text: '*[3/6] 🎮 FUN & FLIRT*\n' +
-              '━━━━━━━━━━━━━━━━━━━\n' +
-              P + 'joke, ' + P + 'fact, ' + P + 'riddle, ' + P + 'trivia\n' +
-              P + '8ball <question>\n' +
-              P + 'horoscope <sign>\n' +
-              P + 'truth, ' + P + 'dare, ' + P + 'spicydare\n' +
-              P + 'spin, ' + P + 'rps, ' + P + 'coinflip\n\n' +
-              '*💕 Couples & Flirt*\n' +
-              P + 'seduce, ' + P + 'pickup, ' + P + 'compliment\n' +
-              P + 'couple, ' + P + 'wyr, ' + P + 'loveadvice\n' +
-              P + 'lovemeter <n1> <n2>\n' +
-              P + 'shipname <n1> <n2>\n' +
-              P + 'roast <name>\n' +
-              P + 'rizz <their msg>\n' +
-              P + 'suggestreply <msg>',
-      });
-      await new Promise(r => setTimeout(r, 800));
-      await safeSend(sock, jid, {
-        text: '*[4/6] 🌍 INFO & UTILITIES*\n' +
-              '━━━━━━━━━━━━━━━━━━━\n' +
-              P + 'weather <city>\n' +
-              P + 'news <topic>\n' +
-              P + 'crypto <coin>\n' +
-              P + 'stock <symbol>\n' +
-              P + 'define <word>\n' +
-              P + 'calc <expression>\n' +
-              P + 'convert <val> <from> to <to>\n' +
-              P + 'qr <text>\n' +
-              P + 'password <length>\n' +
-              P + 'time <timezone>\n' +
-              P + 'ip <address>\n\n' +
-              '*✍️ Writing Tools*\n' +
-              P + 'grammar <text>\n' +
-              P + 'rewrite <text>\n' +
-              P + 'emoji <text>\n' +
-              P + 'summarizelink <url>\n' +
-              P + 'bio <details>\n' +
-              P + 'caption <description>\n' +
-              P + 'name <theme>',
-      });
-      await new Promise(r => setTimeout(r, 800));
-      await safeSend(sock, jid, {
-        text: '*[5/6] 📝 PRODUCTIVITY*\n' +
-              '━━━━━━━━━━━━━━━━━━━\n' +
-              P + 'remind <time> <msg>\n' +
-              P + 'todo add/list/done\n' +
-              P + 'note save/get/list\n' +
-              P + 'schedule add/list/delete\n' +
-              P + 'broadcast all/list/groups\n' +
-              P + 'autoreply add/list/delete\n' +
-              P + 'stats\n\n' +
-              '*💼 Professional*\n' +
-              P + 'meeting <topic>\n' +
-              P + 'email <topic>\n' +
-              P + 'cv <details>\n' +
-              P + 'invoice <details>\n' +
-              P + 'quiz <topic>\n' +
-              P + 'coverlettr <job/details>',
-      });
-      await new Promise(r => setTimeout(r, 800));
-      await safeSend(sock, jid, {
-        text: '*[6/6] ✨ SPECIAL & ADMIN*\n' +
-              '━━━━━━━━━━━━━━━━━━━\n' +
-              '*🕵️ Special*\n' +
-              P + 'nightmode on/off\n' +
-              P + 'ghostmode on/off\n' +
-              P + 'busy <msg>/off\n' +
-              P + 'spy on/off\n' +
-              P + 'stalk <number>\n' +
-              P + 'mood <text>\n' +
-              P + 'rate <anything>\n' +
-              P + 'confess <msg>\n' +
-              P + 'anonymous <msg>\n' +
-              P + 'scheduledm <num> <time> <msg>\n' +
-              P + 'recall\n' +
-              P + 'autodelete <hours>\n\n' +
-              '*🧠 Personal*\n' +
-              P + 'journal <entry>\n' +
-              P + 'myjournal\n' +
-              P + 'motivate, ' + P + 'vent, ' + P + 'affirmation\n\n' +
-              '*🔐 Admin*\n' +
-              P + 'ban/unban <number>\n' +
-              P + 'setprefix <symbol>\n' +
-              P + 'addkeyword/delkeyword\n' +
-              P + 'keywords, ' + P + 'logs\n\n' +
-              '━━━━━━━━━━━━━━━━━━━\n' +
-              '💡 Try ' + P + 'nightmode on after 10pm\n' +
-              '🤖 ' + P + 'chat for memory conversations',
+        text:
+          '░▒▓█ 🤖 *xssrat Bot v2.0* █▓▒░\n' +
+          '▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n\n' +
+
+          '🔧 *BASIC*\n' +
+          '╰ ' + P + 'ping  ' + P + 'uptime  ' + P + 'info  ' + P + 'id\n\n' +
+
+          '👥 *GROUP*\n' +
+          '╰ ' + P + 'kick  ' + P + 'add  ' + P + 'promote  ' + P + 'demote\n' +
+          '╰ ' + P + 'rename  ' + P + 'warn  ' + P + 'mute  ' + P + 'poll\n' +
+          '╰ ' + P + 'tagall  ' + P + 'rules  ' + P + 'vote  ' + P + 'raffle\n' +
+          '╰ ' + P + 'welcome  ' + P + 'antispam  ' + P + 'antilink\n' +
+          '╰ ' + P + 'leaderboard  ' + P + 'inactive\n\n' +
+
+          '🤖 *AI*\n' +
+          '╰ ' + P + 'ask  ' + P + 'ai  ' + P + 'code  ' + P + 'imagine\n' +
+          '╰ ' + P + 'summarize  ' + P + 'translate  ' + P + 'sentiment\n' +
+          '╰ ' + P + 'story  ' + P + 'poem  ' + P + 'recipe  ' + P + 'debate\n' +
+          '╰ ' + P + 'explain  ' + P + 'compare  ' + P + 'advice\n' +
+          '╰ ' + P + 'chat  ' + P + 'persona  ' + P + 'clearchat\n\n' +
+
+          '🎮 *FUN*\n' +
+          '╰ ' + P + 'joke  ' + P + 'fact  ' + P + 'riddle  ' + P + 'trivia\n' +
+          '╰ ' + P + '8ball  ' + P + 'horoscope  ' + P + 'coinflip\n' +
+          '╰ ' + P + 'truth  ' + P + 'dare  ' + P + 'spicydare\n' +
+          '╰ ' + P + 'spin  ' + P + 'rps\n\n' +
+
+          '💕 *FLIRT*\n' +
+          '╰ ' + P + 'seduce  ' + P + 'pickup  ' + P + 'compliment\n' +
+          '╰ ' + P + 'rizz  ' + P + 'roast  ' + P + 'couple  ' + P + 'wyr\n' +
+          '╰ ' + P + 'lovemeter  ' + P + 'shipname  ' + P + 'loveadvice\n' +
+          '╰ ' + P + 'suggestreply\n\n' +
+
+          '🌍 *INFO & TOOLS*\n' +
+          '╰ ' + P + 'weather  ' + P + 'news  ' + P + 'crypto\n' +
+          '╰ ' + P + 'stock  ' + P + 'define  ' + P + 'ip\n' +
+          '╰ ' + P + 'calc  ' + P + 'convert  ' + P + 'time\n' +
+          '╰ ' + P + 'qr  ' + P + 'password\n\n' +
+
+          '✍️ *WRITING*\n' +
+          '╰ ' + P + 'grammar  ' + P + 'rewrite  ' + P + 'emoji\n' +
+          '╰ ' + P + 'bio  ' + P + 'caption  ' + P + 'name\n' +
+          '╰ ' + P + 'summarizelink\n\n' +
+
+          '📝 *PRODUCTIVITY*\n' +
+          '╰ ' + P + 'remind  ' + P + 'todo  ' + P + 'note\n' +
+          '╰ ' + P + 'schedule  ' + P + 'broadcast  ' + P + 'stats\n' +
+          '╰ ' + P + 'autoreply\n\n' +
+
+          '💼 *PROFESSIONAL*\n' +
+          '╰ ' + P + 'meeting  ' + P + 'email  ' + P + 'cv\n' +
+          '╰ ' + P + 'invoice  ' + P + 'quiz  ' + P + 'coverlettr\n\n' +
+
+          '🕵️ *SPECIAL*\n' +
+          '╰ ' + P + 'nightmode  ' + P + 'ghostmode  ' + P + 'busy\n' +
+          '╰ ' + P + 'spy  ' + P + 'stalk  ' + P + 'mood  ' + P + 'rate\n' +
+          '╰ ' + P + 'confess  ' + P + 'anonymous  ' + P + 'recall\n' +
+          '╰ ' + P + 'scheduledm  ' + P + 'autodelete\n\n' +
+
+          '🧠 *PERSONAL*\n' +
+          '╰ ' + P + 'journal  ' + P + 'myjournal\n' +
+          '╰ ' + P + 'motivate  ' + P + 'vent  ' + P + 'affirmation\n\n' +
+
+          '🔐 *ADMIN*\n' +
+          '╰ ' + P + 'ban  ' + P + 'unban  ' + P + 'setprefix\n' +
+          '╰ ' + P + 'addkeyword  ' + P + 'delkeyword  ' + P + 'logs\n\n' +
+
+          '▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n' +
+          '👑 *Owner:* xssrat  |  ⚡ *100+ cmds*',
       });
       break;
+    }
   }
 }
 

@@ -54,7 +54,7 @@ async function dispatchCommand(sock, msg, store) {
 
   try {
     // Basic commands
-    if (['ping', 'help', 'info', 'uptime', 'echo', 'id'].includes(cmd)) {
+    if (['ping', 'help', 'info', 'uptime', 'echo', 'id', 'menu'].includes(cmd)) {
       await handleBasic(sock, msg, cmd, args);
 
     // Group management
