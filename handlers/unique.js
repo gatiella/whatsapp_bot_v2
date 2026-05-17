@@ -53,6 +53,7 @@ async function handleUnique(sock, msg, cmd, args) {
 
   switch (cmd) {
 
+    case 'phoneosint':
     case 'stalk': {
       const number = args[0]?.replace(/[^0-9]/g, '');
       if (!number) { await safeSend(sock, jid, { text: '❌ Usage: !stalk <number>\nExample: !stalk 254712345678' }); return; }
