@@ -158,8 +158,9 @@ async function handleBasic(sock, msg, cmd, args) {
               `• ${PREFIX}meeting <topic>\n` +
               `• ${PREFIX}email <topic>\n` +
               `• ${PREFIX}cv <your details>\n` +
-              `• ${PREFIX}invoice <details>\n` +
-              `• ${PREFIX}coverlettr <job/details>`,
+              `• ${PREFIX}invoice <details>
+              `• ${PREFIX}quiz <topic> — AI quiz\n` +
+              `• ${PREFIX}coverlettr <job/details>
       });
       await new Promise(r => setTimeout(r, 800));
       await safeSend(sock, jid, {
