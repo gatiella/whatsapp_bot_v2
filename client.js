@@ -46,7 +46,7 @@ async function startBot() {
     if (connection === 'close') {
       const shouldReconnect =
         new Boom(lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-      if (shouldReconnect) setTimeout(() => startBot(), 5000);
+      if (shouldReconnect) setTimeout(() => startBot(), 15000);
       else logger.error('Logged out. Delete auth_info and restart.');
     }
     if (connection === 'open') {
@@ -59,6 +59,23 @@ async function startBot() {
   sock.ev.on('creds.update', saveCreds);
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
+    // Spy mode - forward group messages to owner DM
+    if (type === 'notify') {
+      for (const m of messages) {
+        if (!m.message || m.key.fromMe) continue;
+        const mJid = m.key.remoteJid;
+        if (mJid.endsWith('@g.us') && global.spyMode?.[mJid]) {
+          const ownerJid = process.env.OWNER_NUMBER + '@s.whatsapp.net';
+          const sender = m.key.participant?.replace('@s.whatsapp.net', '') || 'unknown';
+          const text = m.message?.conversation || m.message?.extendedTextMessage?.text || '[media]';
+          const time = new Date().toLocaleTimeString();
+          try {
+            await sock.sendMessage(ownerJid, { text: '🕵️ [spy] ' + time + ' +' + sender + ': ' + text });
+          } catch (_) {}
+        }
+      }
+    }
+
     if (type !== 'notify') return;
     for (const msg of messages) {
       if (!msg.message) continue;
@@ -96,7 +113,23 @@ async function startBot() {
     }
   });
 
-  return sock;
+  // Capture deleted messages
+  sock.ev.on('messages.update', async (updates) => {
+    for (const update of updates) {
+      if (update.update?.message === null) {
+        const cached = global.messageCache?.[update.key.id];
+        if (cached) {
+          const ownerJid = process.env.OWNER_NUMBER + '@s.whatsapp.net';
+          const sender = update.key.participant?.replace('@s.whatsapp.net', '') || update.key.remoteJid;
+          try {
+            await sock.sendMessage(ownerJid, { text: `🗑️ *Deleted msg* from +${sender}:\n${cached}` });
+          } catch (_) {}
+        }
+      }
+    }
+  });
+
+return sock;
 }
 
 module.exports = { startBot };

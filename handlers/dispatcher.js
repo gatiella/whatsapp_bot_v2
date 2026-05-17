@@ -24,7 +24,7 @@ async function dispatchCommand(sock, msg, store) {
   const text = getMessageText(msg);
   const isGroup = jid.endsWith('@g.us');
   const sender = msg.key.participant || msg.key.remoteJid;
-  const senderNumber = sender.replace(/[^0-9]/g, '');
+  const senderNumber = sender.replace('@lid', '').replace(/[^0-9]/g, '') || msg.key.remoteJid.replace(/[^0-9]/g, '');
 
   if (!text) return;
   console.log("[DEBUG] msg from:", sender, "jid:", jid, "text:", text);
