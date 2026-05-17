@@ -94,7 +94,7 @@ async function dispatchCommand(sock, msg, store) {
     } else if (['meeting', 'email', 'cv', 'invoice', 'quiz', 'coverlettr', 'explain', 'compare', 'name', 'bio', 'caption'].includes(cmd)) {
       await handleAIPowered(sock, msg, cmd, args);
 
-    } else if (['stalk', 'stalkwatch', 'myonline', 'usersearch', 'pastebin', 'anonymous', 'ghostlist', 'autotyping', 'clone', 'fakeonline', 'lastseen', 'recallall', 'mimic', 'ghostmode', 'busy', 'scheduledm', 'recall', 'spy', 'rizz', 'suggestreply', 'persona', 'chat', 'clearchat'].includes(cmd)) {
+    } else if (['stalk', 'stalkwatch', 'myonline', 'usersearch', 'pastebin', 'anonymous', 'ghostlist', 'autotyping', 'clone', 'fakeonline', 'lastseen', 'fake', 'recallall', 'mimic', 'ghostmode', 'busy', 'scheduledm', 'recall', 'spy', 'rizz', 'suggestreply', 'persona', 'chat', 'clearchat'].includes(cmd)) {
       await handleUnique(sock, msg, cmd, args);
 
     } else if (['raffle', 'inactive'].includes(cmd)) {

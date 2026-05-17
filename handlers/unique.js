@@ -607,6 +607,31 @@ ${list}`,
       await safeSend(sock, jid, { text: reply ? `🎭 *Mimic Reply:*\n\n${reply}` : '❌ Could not generate reply.' });
       break;
     }
+
+    case 'fake': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      const message = args.slice(1).join(' ');
+      if (!number || !message) {
+        await safeSend(sock, jid, { text: '❌ Usage: !fake <number> <message>\nExample: !fake 254712345678 hey bro' });
+        return;
+      }
+      try {
+        const fakeJid = number + '@s.whatsapp.net';
+        // forward trick — quote a message appearing from that number
+        await sock.sendMessage(jid, {
+          text: message,
+          contextInfo: {
+            externalAdReply: null,
+            quotedMessage: { conversation: message },
+            participant: fakeJid,
+            remoteJid: fakeJid,
+          }
+        });
+      } catch (err) {
+        await safeSend(sock, jid, { text: '❌ Failed: ' + err.message });
+      }
+      break;
+    }
     case 'stalkwatch': {
       const sub = args[0]?.toLowerCase();
       const number = args[1]?.replace(/[^0-9]/g, '') || args[0]?.replace(/[^0-9]/g, '');
