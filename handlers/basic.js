@@ -10,6 +10,22 @@ async function handleBasic(sock, msg, cmd, args) {
   const P = config.PREFIX;
 
   switch (cmd) {
+    case 'groupon': {
+      if (!jid.endsWith('@g.us')) { await safeSend(sock, jid, { text: '❌ Only works in groups.' }); return; }
+      global.enabledGroups = global.enabledGroups || {};
+      global.enabledGroups[jid] = true;
+      await safeSend(sock, jid, { text: '✅ Bot enabled in this group.' });
+      break;
+    }
+
+    case 'groupoff': {
+      if (!jid.endsWith('@g.us')) { await safeSend(sock, jid, { text: '❌ Only works in groups.' }); return; } 
+      global.enabledGroups = global.enabledGroups || {};
+      delete global.enabledGroups[jid];
+      await safeSend(sock, jid, { text: '🔕 Bot disabled in this group.' });
+      break;
+    }
+
     case 'ping': {
       const t = Date.now();
       await safeSend(sock, jid, { text: '🏓 Pong! ⚡ ' + (Date.now() - t) + 'ms' });
@@ -51,7 +67,8 @@ async function handleBasic(sock, msg, cmd, args) {
           '▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n\n' +
 
           '🔧 *BASIC*\n' +
-          '╰ ' + P + 'ping  ' + P + 'uptime  ' + P + 'info  ' + P + 'id\n\n' +
+          '╰ ' + P + 'ping  ' + P + 'uptime  ' + P + 'info  ' + P + 'id\n' +
+          '╰ ' + P + 'groupon  ' + P + 'groupoff\n\n' +
 
           '👥 *GROUP*\n' +
           '╰ ' + P + 'kick  ' + P + 'add  ' + P + 'promote  ' + P + 'demote\n' +

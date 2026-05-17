@@ -29,6 +29,10 @@ async function dispatchCommand(sock, msg, store) {
   if (!text) return;
   console.log("[DEBUG] msg from:", sender, "jid:", jid, "text:", text);
 
+  // Block all group messages unless group is explicitly enabled
+  global.enabledGroups = global.enabledGroups || {};
+  if (isGroup && !global.enabledGroups[jid]) return;
+
   // Log message to DB
   await logMessage(jid, sender, text);
 
@@ -68,7 +72,7 @@ async function dispatchCommand(sock, msg, store) {
 
   try {
     // Basic commands
-    if (['ping', 'help', 'info', 'uptime', 'echo', 'id', 'menu'].includes(cmd)) {
+    if (['ping', 'help', 'info', 'uptime', 'echo', 'id', 'menu', 'groupon', 'groupoff'].includes(cmd)) {
       await handleBasic(sock, msg, cmd, args);
 
     // Group management
