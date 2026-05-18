@@ -1090,6 +1090,182 @@ ${list}`,
       await safeSend(sock, jid, { text: analysis ? `🔍 *Interest Analysis: +${number}*\n\n${analysis}` : '❌ Could not analyze interests.' });
       break;
     }
+
+    case 'expose': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      if (!number) {
+        await safeSend(sock, jid, { text: '❌ Usage: !expose <number>' });
+        return;
+      }
+      await safeSend(sock, jid, { text: '🔍 Building full profile...' });
+      const targetJid = number + '@s.whatsapp.net';
+      let report = `🗂️ *Full Expose: +${number}*\n\n`;
+
+      // WhatsApp check
+      try {
+        const [result] = await sock.onWhatsApp(targetJid);
+        report += `💬 WhatsApp: ${result?.exists ? '✅ Yes' : '❌ No'}\n`;
+        if (result?.isBusiness) report += `🏢 Account: Business\n`;
+        if (result?.name) report += `📛 Push name: ${result.name}\n`;
+        if (result?.lid) report += `🔢 WA ID: ${result.lid}\n`;
+      } catch {}
+
+      // About
+      try {
+        const profile = await sock.fetchStatus(targetJid);
+        if (profile?.status) report += `📝 About: ${profile.status}\n`;
+        if (profile?.setAt) report += `🗓️ About set: ${new Date(profile.setAt).toLocaleDateString()}\n`;
+      } catch {}
+
+      // Business profile
+      try {
+        const biz = await sock.getBusinessProfile(targetJid);
+        if (biz?.description) report += `🏢 Biz desc: ${biz.description}\n`;
+        if (biz?.email) report += `📧 Email: ${biz.email}\n`;
+        if (biz?.website?.[0]) report += `🌐 Website: ${biz.website[0]}\n`;
+      } catch {}
+
+      // Mutual groups
+      try {
+        const groups = await sock.groupFetchAllParticipating();
+        const mutual = Object.values(groups).filter(g =>
+          g.participants?.some(p => p.id === targetJid || p.id === number + '@lid')
+        ).map(g => g.subject);
+        report += `👥 Mutual groups: ${mutual.length ? mutual.join(', ') : 'None'}\n`;
+      } catch {}
+
+      // AbstractAPI
+      try {
+        const key = process.env.ABSTRACTAPI_KEY;
+        if (key) {
+          const r = await fetch(`https://phoneintelligence.abstractapi.com/v1/?api_key=${key}&phone=${number}`);
+          const d = await r.json();
+          if (d?.phone_carrier?.name) report += `📡 Carrier: ${d.phone_carrier.name}\n`;
+          if (d?.phone_carrier?.line_type) report += `📱 Line: ${d.phone_carrier.line_type}\n`;
+          if (d?.phone_location?.country_name) report += `🌍 Country: ${d.phone_location.country_name}\n`;
+          if (d?.phone_location?.timezone) report += `🕐 Timezone: ${d.phone_location.timezone}\n`;
+          if (d?.phone_validation?.is_voip) report += `🌐 VoIP: Yes ⚠️\n`;
+          if (d?.phone_risk?.risk_level) report += `⚠️ Risk: ${d.phone_risk.risk_level}\n`;
+          if (d?.phone_breaches?.total_breaches) report += `🔓 Breaches: ${d.phone_breaches.total_breaches}\n`;
+        }
+      } catch {}
+
+      // Message cache stats
+      const msgs = Object.values(global.messageCache || {}).filter(m => m.sender === targetJid && m.text);
+      if (msgs.length) {
+        const avgLen = Math.round(msgs.reduce((a, m) => a + m.text.length, 0) / msgs.length);
+        const hours = {};
+        msgs.forEach(m => { const h = new Date(m.timestamp).getHours(); hours[h] = (hours[h] || 0) + 1; });
+        const peakHour = Object.entries(hours).sort((a,b) => b[1]-a[1])[0];
+        report += `\n📊 *Behaviour*\n`;
+        report += `💬 Cached msgs: ${msgs.length}\n`;
+        report += `⏰ Most active: ${peakHour[0]}:00-${parseInt(peakHour[0])+1}:00\n`;
+        report += `📝 Avg msg length: ${avgLen} chars\n`;
+        const last = msgs.sort((a,b) => b.timestamp - a.timestamp)[0];
+        const ago = Math.round((Date.now() - last.timestamp) / 60000);
+        report += `🕐 Last message: ${ago < 60 ? ago + 'min ago' : Math.round(ago/60) + 'h ago'}\n`;
+      }
+
+      // Read receipt
+      const receipt = global.readReceipts?.[number];
+      if (receipt?.readAt) {
+        report += `\n📬 *Read Receipts*\n`;
+        report += `👁️ Last read your msg: ${new Date(receipt.readAt).toLocaleString()}\n`;
+        if (receipt.replyAt) report += `💬 Replied: ${new Date(receipt.replyAt).toLocaleString()}\n`;
+        else report += `💬 Has not replied\n`;
+      }
+
+      // Search links
+      const encoded = encodeURIComponent('+' + number);
+      report += `\n🔗 *Search Links*\n`;
+      report += `• https://www.truecaller.com/search/ke/${number}\n`;
+      report += `• https://www.google.com/search?q=${encoded}\n`;
+      report += `• https://www.facebook.com/search/people/?q=${number}`;
+
+      await safeSend(sock, jid, { text: report });
+      break;
+    }
+
+    case 'liedetect': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      if (!number) {
+        await safeSend(sock, jid, { text: '❌ Usage: !liedetect <number>' });
+        return;
+      }
+      const targetJid = number + '@s.whatsapp.net';
+      const msgs = Object.values(global.messageCache || {})
+        .filter(m => m.sender === targetJid && m.text)
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 20)
+        .map(m => m.text)
+        .join('\n');
+
+      if (!msgs) {
+        await safeSend(sock, jid, { text: '⚠️ No cached messages from +' + number + ' yet.' });
+        return;
+      }
+      await safeSend(sock, jid, { text: '🔎 Analyzing for deception...' });
+      const analysis = await askAI(
+        `Messages:\n${msgs}`,
+        'You are a deception detection expert. Analyze these messages for: inconsistencies, vague language, deflection patterns, overexplaining, topic avoidance, sudden tone changes, and other deception indicators. Rate overall deception likelihood as Low/Medium/High. Be specific with examples from the messages. Format with emojis. Max 8 lines.'
+      );
+      await safeSend(sock, jid, { text: analysis ? `🔎 *Deception Analysis: +${number}*\n\n${analysis}` : '❌ Could not analyze.' });
+      break;
+    }
+
+    case 'manipulate': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      const goal = args.slice(1).join(' ') || 'get them to reply';
+      if (!number) {
+        await safeSend(sock, jid, { text: '❌ Usage: !manipulate <number> <goal>\nExample: !manipulate 254712345678 get them to meet up' });
+        return;
+      }
+      const targetJid = number + '@s.whatsapp.net';
+      const msgs = Object.values(global.messageCache || {})
+        .filter(m => m.sender === targetJid && m.text)
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 20)
+        .map(m => m.text)
+        .join('\n');
+
+      await safeSend(sock, jid, { text: '🧠 Building influence strategy...' });
+      const prompt = msgs
+        ? `Their messages:\n${msgs}\n\nGoal: ${goal}`
+        : `Goal: ${goal}`;
+      const analysis = await askAI(
+        prompt,
+        'You are a psychology and persuasion expert. Based on the messages and goal, identify their personality type, key psychological triggers, and suggest 3 specific tactics to achieve the goal. Include: which cognitive biases to leverage, exact phrases to use, timing recommendations, and what to avoid. Be practical and specific. Format with emojis.'
+      );
+      await safeSend(sock, jid, { text: analysis ? `🧠 *Influence Strategy: +${number}*\nGoal: ${goal}\n\n${analysis}` : '❌ Could not generate strategy.' });
+      break;
+    }
+
+    case 'influence': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      if (!number) {
+        await safeSend(sock, jid, { text: '❌ Usage: !influence <number>' });
+        return;
+      }
+      const targetJid = number + '@s.whatsapp.net';
+      const msgs = Object.values(global.messageCache || {})
+        .filter(m => m.sender === targetJid && m.text)
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 25)
+        .map(m => m.text)
+        .join('\n');
+
+      if (!msgs) {
+        await safeSend(sock, jid, { text: '⚠️ No cached messages from +' + number + ' yet.' });
+        return;
+      }
+      await safeSend(sock, jid, { text: '🎯 Building persuasion profile...' });
+      const analysis = await askAI(
+        `Messages:\n${msgs}`,
+        'You are a master persuasion strategist. Analyze these messages and build a complete persuasion profile: 1) Personality type (DISC or similar), 2) Core values and motivations, 3) Decision making style, 4) Top 3 emotional triggers, 5) Best communication approach, 6) What they respond to vs avoid, 7) Personalized persuasion script for maximum influence. Be detailed and tactical. Format with emojis.'
+      );
+      await safeSend(sock, jid, { text: analysis ? `🎯 *Persuasion Profile: +${number}*\n\n${analysis}` : '❌ Could not generate profile.' });
+      break;
+    }
     case 'stalkwatch': {
       const sub = args[0]?.toLowerCase();
       const number = args[1]?.replace(/[^0-9]/g, '') || args[0]?.replace(/[^0-9]/g, '');
