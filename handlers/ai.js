@@ -1,3 +1,4 @@
+const { toFont, STYLES } = require('./unique');
 const { getJID } = require('../utils/helpers');
 const { safeSend } = require('../utils/send');
 
@@ -116,7 +117,33 @@ async function handleAI(sock, msg, cmd, args) {
     }
 
     if (reply) {
-      await safeSend(sock, jid, { text: reply });
+      const headers = {
+        ask: '🤖 *𝗔𝗜 𝗥𝗲𝘀𝗽𝗼𝗻𝘀𝗲:*',
+        ai: '🤖 *𝗔𝗜 𝗥𝗲𝘀𝗽𝗼𝗻𝘀𝗲:*',
+        summarize: '📝 *𝗦𝘂𝗺𝗺𝗮𝗿𝘆:*',
+        translate: '🌐 *𝗧𝗿𝗮𝗻𝘀𝗹𝗮𝘁𝗶𝗼𝗻:*',
+        code: '💻 *𝗖𝗼𝗱𝗲:*',
+        sentiment: '🎭 *𝗦𝗲𝗻𝘁𝗶𝗺𝗲𝗻𝘁:*',
+        imagine: '🎨 *𝗜𝗺𝗮𝗴𝗶𝗻𝗲:*',
+        advice: '💡 *𝗔𝗱𝘃𝗶𝗰𝗲:*',
+        story: '📖 *𝓢𝓽𝓸𝓻𝔂:*',
+        poem: '🎭 *𝓟𝓸𝓮𝓶:*',
+        recipe: '🍳 *𝗥𝗲𝗰𝗶𝗽𝗲:*',
+        debate: '⚖️ *𝗗𝗲𝗯𝗮𝘁𝗲:*',
+        roastai: '🔥 *𝗥𝗼𝗮𝘀𝘁:*',
+        pickup: '💘 *𝓟𝓲𝓬𝓴𝓾𝓹 𝓛𝓲𝓷𝓮:*',
+      };
+      const styleMap = {
+        story: STYLES.cursive,
+        poem: STYLES.cursive,
+        pickup: STYLES.flirt,
+        advice: STYLES.ai,
+        imagine: STYLES.ai,
+      };
+      const header = headers[cmd] || '🤖 *𝗔𝗜:*';
+      const styleFn = styleMap[cmd] || null;
+      const body = styleFn ? styleFn(reply) : reply;
+      await safeSend(sock, jid, { text: `${header}\n\n${body}` });
     } else {
       await safeSend(sock, jid, { text: '❌ AI did not respond. Try again.' });
     }

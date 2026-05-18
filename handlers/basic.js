@@ -73,6 +73,7 @@ async function handleBasic(sock, msg, cmd, args) {
 
           '🔧 *BASIC*\n' +
           '╰ ' + P + 'ping  ' + P + 'uptime  ' + P + 'info  ' + P + 'id\n' +
+          '╰ ' + P + 'font\n' +
           '╰ ' + P + 'groupon  ' + P + 'groupoff\n\n' +
 
           '👥 *GROUP*\n' +

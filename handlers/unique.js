@@ -1,3 +1,32 @@
+
+// Unicode font converter
+function toFont(text, style) {
+  const maps = {
+    bold: {a:"𝗮",b:"𝗯",c:"𝗰",d:"𝗱",e:"𝗲",f:"𝗳",g:"𝗴",h:"𝗵",i:"𝗶",j:"𝗷",k:"𝗸",l:"𝗹",m:"𝗺",n:"𝗻",o:"𝗼",p:"𝗽",q:"𝗾",r:"𝗿",s:"𝘀",t:"𝘁",u:"𝘂",v:"𝘃",w:"𝘄",x:"𝘅",y:"𝘆",z:"𝘇",A:"𝗔",B:"𝗕",C:"𝗖",D:"𝗗",E:"𝗘",F:"𝗙",G:"𝗚",H:"𝗛",I:"𝗜",J:"𝗝",K:"𝗞",L:"𝗟",M:"𝗠",N:"𝗡",O:"𝗢",P:"𝗣",Q:"𝗤",R:"𝗥",S:"𝗦",T:"𝗧",U:"𝗨",V:"𝗩",W:"𝗪",X:"𝗫",Y:"𝗬",Z:"𝗭","0":"𝟬","1":"𝟭","2":"𝟮","3":"𝟯","4":"𝟰","5":"𝟱","6":"𝟲","7":"𝟳","8":"𝟴","9":"𝟵"},
+    italic: {a:"𝘢",b:"𝘣",c:"𝘤",d:"𝘥",e:"𝘦",f:"𝘧",g:"𝘨",h:"𝘩",i:"𝘪",j:"𝘫",k:"𝘬",l:"𝘭",m:"𝘮",n:"𝘯",o:"𝘰",p:"𝘱",q:"𝘲",r:"𝘳",s:"𝘴",t:"𝘵",u:"𝘶",v:"𝘷",w:"𝘸",x:"𝘹",y:"𝘺",z:"𝘻",A:"𝘈",B:"𝘉",C:"𝘊",D:"𝘋",E:"𝘌",F:"𝘍",G:"𝘎",H:"𝘏",I:"𝘐",J:"𝘑",K:"𝘒",L:"𝘓",M:"𝘔",N:"𝘕",O:"𝘖",P:"𝘗",Q:"𝘘",R:"𝘙",S:"𝘚",T:"𝘛",U:"𝘜",V:"𝘝",W:"𝘞",X:"𝘟",Y:"𝘠",Z:"𝘡"},
+    cursive: {a:"𝓪",b:"𝓫",c:"𝓬",d:"𝓭",e:"𝓮",f:"𝓯",g:"𝓰",h:"𝓱",i:"𝓲",j:"𝓳",k:"𝓴",l:"𝓵",m:"𝓶",n:"𝓷",o:"𝓸",p:"𝓹",q:"𝓺",r:"𝓻",s:"𝓼",t:"𝓽",u:"𝓾",v:"𝓿",w:"𝔀",x:"𝔁",y:"𝔂",z:"𝔃",A:"𝓐",B:"𝓑",C:"𝓒",D:"𝓓",E:"𝓔",F:"𝓕",G:"𝓖",H:"𝓗",I:"𝓘",J:"𝓙",K:"𝓚",L:"𝓛",M:"𝓜",N:"𝓝",O:"𝓞",P:"𝓟",Q:"𝓠",R:"𝓡",S:"𝓢",T:"𝓣",U:"𝓤",V:"𝓥",W:"𝓦",X:"𝓧",Y:"𝓨",Z:"𝓩"},
+    double: {a:"𝕒",b:"𝕓",c:"𝕔",d:"𝕕",e:"𝕖",f:"𝕗",g:"𝕘",h:"𝕙",i:"𝕚",j:"𝕛",k:"𝕜",l:"𝕝",m:"𝕞",n:"𝕟",o:"𝕠",p:"𝕡",q:"𝕢",r:"𝕣",s:"𝕤",t:"𝕥",u:"𝕦",v:"𝕧",w:"𝕨",x:"𝕩",y:"𝕪",z:"𝕫",A:"𝔸",B:"𝔹",C:"ℂ",D:"𝔻",E:"𝔼",F:"𝔽",G:"𝔾",H:"ℍ",I:"𝕀",J:"𝕁",K:"𝕂",L:"𝕃",M:"𝕄",N:"ℕ",O:"𝕆",P:"ℙ",Q:"ℚ",R:"ℝ",S:"𝕊",T:"𝕋",U:"𝕌",V:"𝕍",W:"𝕎",X:"𝕏",Y:"𝕐",Z:"ℤ"},
+    small: {a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"Q",r:"ʀ",s:"ꜱ",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ",A:"ᴀ",B:"ʙ",C:"ᴄ",D:"ᴅ",E:"ᴇ",F:"ꜰ",G:"ɢ",H:"ʜ",I:"ɪ",J:"ᴊ",K:"ᴋ",L:"ʟ",M:"ᴍ",N:"ɴ",O:"ᴏ",P:"ᴘ",Q:"Q",R:"ʀ",S:"ꜱ",T:"ᴛ",U:"ᴜ",V:"ᴠ",W:"ᴡ",X:"x",Y:"ʏ",Z:"ᴢ"},
+    bubble: {a:"ⓐ",b:"ⓑ",c:"ⓒ",d:"ⓓ",e:"ⓔ",f:"ⓕ",g:"ⓖ",h:"ⓗ",i:"ⓘ",j:"ⓙ",k:"ⓚ",l:"ⓛ",m:"ⓜ",n:"ⓝ",o:"ⓞ",p:"ⓟ",q:"ⓠ",r:"ⓡ",s:"ⓢ",t:"ⓣ",u:"ⓤ",v:"ⓥ",w:"ⓦ",x:"ⓧ",y:"ⓨ",z:"ⓩ",A:"Ⓐ",B:"Ⓑ",C:"Ⓒ",D:"Ⓓ",E:"Ⓔ",F:"Ⓕ",G:"Ⓖ",H:"Ⓗ",I:"Ⓘ",J:"Ⓙ",K:"Ⓚ",L:"Ⓛ",M:"Ⓜ",N:"Ⓝ",O:"Ⓞ",P:"Ⓟ",Q:"Ⓠ",R:"Ⓡ",S:"Ⓢ",T:"Ⓣ",U:"Ⓤ",V:"Ⓥ",W:"Ⓦ",X:"Ⓧ",Y:"Ⓨ",Z:"Ⓩ"},
+    gothic: {a:"𝖆",b:"𝖇",c:"𝖈",d:"𝖉",e:"𝖊",f:"𝖋",g:"𝖌",h:"𝖍",i:"𝖎",j:"𝖏",k:"𝖐",l:"𝖑",m:"𝖒",n:"𝖓",o:"𝖔",p:"𝖕",q:"𝖖",r:"𝖗",s:"𝖘",t:"𝖙",u:"𝖚",v:"𝖛",w:"𝖜",x:"𝖝",y:"𝖞",z:"𝖟",A:"𝕬",B:"𝕭",C:"𝕮",D:"𝕯",E:"𝕰",F:"𝕱",G:"𝕲",H:"𝕳",I:"𝕴",J:"𝕵",K:"𝕶",L:"𝕷",M:"𝕸",N:"𝕹",O:"𝕺",P:"𝕻",Q:"𝕼",R:"𝕽",S:"𝕾",T:"𝕿",U:"𝖀",V:"𝖁",W:"𝖂",X:"𝖃",Y:"𝖄",Z:"𝖅"},
+  };
+  const map = maps[style];
+  if (!map) return text;
+  return text.split("").map(c => map[c] || c).join("");
+}
+
+// Style presets for bot responses
+const STYLES = {
+  flirt: (t) => toFont(t, "cursive"),
+  cursive: (t) => toFont(t, "cursive"),
+  fun: (t) => toFont(t, "bubble"),
+  ai: (t) => toFont(t, "italic"),
+  osint: (t) => toFont(t, "bold"),
+  header: (t) => toFont(t, "small"),
+  gothic: (t) => toFont(t, "gothic"),
+  double: (t) => toFont(t, "double"),
+};
+
 const { getJID, getMessageText } = require('../utils/helpers');
 const { safeSend } = require('../utils/send');
 
@@ -775,7 +804,10 @@ ${list}`,
         .slice(0, 10)
         .map(([num, r], i) => {
           const diff = r.sentAt ? Math.round((r.readAt - r.sentAt) / 60000) : null;
-          return `${i+1}. +${num} — read ${new Date(r.readAt).toLocaleTimeString()}${diff !== null ? ' (took ' + diff + 'min)' : ''}${r.replyAt ? ' ✅ replied' : ' 🔇 no reply'}`;
+          const isLid = num.length > 13;
+          const resolvedNum = isLid ? (global.lidToNumber?.[num] || null) : num;
+          const displayNum = resolvedNum ? '+' + resolvedNum : (r.pushName || 'Unknown @' + num.slice(-6));
+          return `${i+1}. ${displayNum} — read ${new Date(r.readAt).toLocaleTimeString()}${diff !== null ? ' (took ' + diff + 'min)' : ''}${r.replyAt ? ' ✅ replied' : ' 🔇 no reply'}`;
         })
         .join('\n');
       await safeSend(sock, jid, { text: `📬 *Read Receipts*\n\n${list}` });
@@ -804,7 +836,10 @@ ${list}`,
       const list = sorted.map(([num, m], i) => {
         const ago = Math.round((now - m.timestamp) / 60000);
         const when = ago < 60 ? ago + 'min ago' : ago < 1440 ? Math.round(ago/60) + 'h ago' : Math.round(ago/1440) + 'd ago';
-        return `${i+1}. +${num}\n   💬 "${m.text?.slice(0,30) || '[media]'}"\n   🕐 ${when}`;
+        const isLid = num.length > 13;
+        const resolvedNum = isLid ? (global.lidToNumber?.[num] || null) : num;
+        const displayNum = resolvedNum ? '+' + resolvedNum : (m.pushName || 'Unknown @' + num.slice(-6));
+        return `${i+1}. ${displayNum}\n   💬 "${m.text?.slice(0,30) || '[media]'}"\n   🕐 ${when}`;
       }).join('\n\n');
       await safeSend(sock, jid, { text: `📋 *Last Texted (Recent First)*\n\n${list}` });
       break;
@@ -1266,6 +1301,19 @@ ${list}`,
       await safeSend(sock, jid, { text: analysis ? `🎯 *Persuasion Profile: +${number}*\n\n${analysis}` : '❌ Could not generate profile.' });
       break;
     }
+
+    case 'font': {
+      const style = args[0]?.toLowerCase();
+      const text = args.slice(1).join(' ');
+      const available = ['bold','italic','cursive','double','small','bubble','gothic'];
+      if (!style || !text || !available.includes(style)) {
+        const preview = available.map(s => `${s}: ${toFont('Hello World', s)}`).join('\n');
+        await safeSend(sock, jid, { text: `✍️ *Font Styles*\n\nUsage: !font <style> <text>\n\n${preview}` });
+        return;
+      }
+      await safeSend(sock, jid, { text: toFont(text, style) });
+      break;
+    }
     case 'stalkwatch': {
       const sub = args[0]?.toLowerCase();
       const number = args[1]?.replace(/[^0-9]/g, '') || args[0]?.replace(/[^0-9]/g, '');
@@ -1643,4 +1691,4 @@ async function handleAIPowered(sock, msg, cmd, args) {
   }
 }
 
-module.exports = { handleUnique, handleAIPowered, askAI };
+module.exports = { handleUnique, handleAIPowered, askAI, toFont, STYLES };

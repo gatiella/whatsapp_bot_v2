@@ -125,6 +125,7 @@ async function startBot() {
         sender: cacheSender,
         jid: cacheJid,
         timestamp: Date.now(),
+        pushName: msg.pushName || null,
       };
       // keep cache size manageable
       const keys = Object.keys(global.messageCache);
@@ -165,6 +166,27 @@ async function startBot() {
     }
   });
 
+  // LID to phone number resolver
+  global.lidToNumber = global.lidToNumber || {};
+  global.lidToName = global.lidToName || {};
+
+  // Build LID map from groups
+  async function buildLidMap() {
+    try {
+      const groups = await sock.groupFetchAllParticipating();
+      for (const g of Object.values(groups)) {
+        for (const p of g.participants || []) {
+          if (p.lid && p.id) {
+            const lid = p.lid.replace('@lid','').replace(/[^0-9]/g,'');
+            const num = p.id.replace('@s.whatsapp.net','').replace(/[^0-9]/g,'');
+            if (lid && num) global.lidToNumber[lid] = num;
+          }
+        }
+      }
+    } catch {}
+  }
+  setTimeout(buildLidMap, 3000);
+
   // Track status views
   sock.ev.on('message-receipt.update', async (updates) => {
     for (const update of updates) {
@@ -176,6 +198,7 @@ async function startBot() {
           global.readReceipts[num] = global.readReceipts[num] || {};
           global.readReceipts[num].readAt = update.receipt.readTimestamp * 1000;
           global.readReceipts[num].sentAt = update.key.timestamp ? update.key.timestamp * 1000 : null;
+          global.readReceipts[num].pushName = update.pushName || null;
         }
         if (update.receipt?.receiptTimestamp) {
           global.readReceipts[num] = global.readReceipts[num] || {};

@@ -1,3 +1,4 @@
+const { toFont, STYLES } = require('./unique');
 const { getJID } = require('../utils/helpers');
 
 const jokes = [
@@ -196,11 +197,11 @@ async function handleFun(sock, msg, cmd, args) {
 
   switch (cmd) {
     case 'joke':
-      try { await sock.sendMessage(jid, { text: `😂 ${rand(jokes)}` }); console.log("[SENT] joke ok"); } catch(e) { console.log("[FAIL] joke:", e.message); }
+      try { await sock.sendMessage(jid, { text: `😂 *ⓙⓞⓚⓔ*\n\n${STYLES.fun(rand(jokes))}` }); console.log("[SENT] joke ok"); } catch(e) { console.log("[FAIL] joke:", e.message); }
       break;
 
     case 'fact':
-      await sock.sendMessage(jid, { text: `🧠 *Random Fact:*\n${rand(facts)}` });
+      await sock.sendMessage(jid, { text: `🧠 *𝗥𝗮𝗻𝗱𝗼𝗺 𝗙𝗮𝗰𝘁:*\n\n${STYLES.ai(rand(facts))}` });
       break;
 
     case 'trivia': {
@@ -248,35 +249,35 @@ async function handleFun(sock, msg, cmd, args) {
     }
 
     case 'truth':
-      await sock.sendMessage(jid, { text: `💬 *Truth:*\n\n${rand(truthQuestions)}` });
+      await sock.sendMessage(jid, { text: `💬 *𝓣𝓻𝓾𝓽𝓱:*\n\n${STYLES.flirt(rand(truthQuestions))}` });
       break;
 
     case 'dare':
-      await sock.sendMessage(jid, { text: `🔥 *Dare:*\n\n${rand(dares)}` });
+      await sock.sendMessage(jid, { text: `🔥 *𝗗𝗮𝗿𝗲:*\n\n${STYLES.fun(rand(dares))}` });
       break;
 
     case 'spicydare':
-      await sock.sendMessage(jid, { text: `🌶️ *Spicy Dare:*\n\n${rand(spicyDares)}` });
+      await sock.sendMessage(jid, { text: `🌶️ *𝓢𝓹𝓲𝓬𝔂 𝓓𝓪𝓻𝓮:*\n\n${STYLES.flirt(rand(spicyDares))}` });
       break;
 
     case 'compliment':
-      await sock.sendMessage(jid, { text: `💝 *Compliment:*\n\n${rand(compliments)}` });
+      await sock.sendMessage(jid, { text: `💝 *𝓒𝓸𝓶𝓹𝓵𝓲𝓶𝓮𝓷𝓽:*\n\n${STYLES.flirt(rand(compliments))}` });
       break;
 
     case 'seduce':
-      await sock.sendMessage(jid, { text: `😏 *Flirt Line:*\n\n${rand(seduceLines)}` });
+      await sock.sendMessage(jid, { text: `😏 *𝓕𝓵𝓲𝓻𝓽 𝓛𝓲𝓷𝓮:*\n\n${STYLES.flirt(rand(seduceLines))}` });
       break;
 
     case 'couple':
-      await sock.sendMessage(jid, { text: `👫 *Couple Challenge:*\n\n${rand(couplesChallenges)}` });
+      await sock.sendMessage(jid, { text: `👫 *𝓒𝓸𝓾𝓹𝓵𝓮 𝓒𝓱𝓪𝓵𝓵𝓮𝓷𝓰𝓮:*\n\n${STYLES.flirt(rand(couplesChallenges))}` });
       break;
 
     case 'wyr':
-      await sock.sendMessage(jid, { text: `🤔 *Would You Rather:*\n\n${rand(wouldYouRather)}` });
+      await sock.sendMessage(jid, { text: `🤔 *𝗪𝗼𝘂𝗹𝗱 𝗬𝗼𝘂 𝗥𝗮𝘁𝗵𝗲𝗿:*\n\n${STYLES.fun(rand(wouldYouRather))}` });
       break;
 
     case 'pickup':
-      await sock.sendMessage(jid, { text: `💘 *Pickup Line:*\n\n${rand(pickupLines)}` });
+      await sock.sendMessage(jid, { text: `💘 *𝓟𝓲𝓬𝓴𝓾𝓹 𝓛𝓲𝓷𝓮:*\n\n${STYLES.flirt(rand(pickupLines))}` });
       break;
 
     case 'roast': {
@@ -286,7 +287,7 @@ async function handleFun(sock, msg, cmd, args) {
     }
 
     case 'loveadvice':
-      await sock.sendMessage(jid, { text: `💕 *Love Advice:*\n\n${rand(loveAdvice)}` });
+      await sock.sendMessage(jid, { text: `💕 *𝓛𝓸𝓿𝓮 𝓐𝓭𝓿𝓲𝓬𝓮:*\n\n${STYLES.flirt(rand(loveAdvice))}` });
       break;
 
     case 'lovemeter': {
