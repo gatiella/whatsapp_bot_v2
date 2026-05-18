@@ -714,6 +714,101 @@ ${list}`,
       }
       break;
     }
+
+    case 'whoviewed': {
+      const sub = args[0]?.toLowerCase();
+      if (sub === 'clear') {
+        global.statusViews = {};
+        await safeSend(sock, jid, { text: '🗑️ Status view log cleared.' });
+        return;
+      }
+      const views = global.statusViews || {};
+      if (!Object.keys(views).length) {
+        await safeSend(sock, jid, { text: '👁️ No status views recorded yet.\n\nViews are logged automatically when someone checks your status.' });
+        return;
+      }
+      const list = Object.entries(views)
+        .sort((a, b) => b[1].lastSeen - a[1].lastSeen)
+        .map(([ num, v], i) => `${i+1}. +${num}\n   👁️ Views: ${v.count}\n   🕐 Last: ${new Date(v.lastSeen).toLocaleString()}`)
+        .join('\n\n');
+      await safeSend(sock, jid, { text: `👁️ *Status Viewers*\n\n${list}\n\n!whoviewed clear — reset log` });
+      break;
+    }
+
+    case 'readreceipt': {
+      const sub = args[0]?.toLowerCase();
+      const number = args[1]?.replace(/[^0-9]/g, '') || args[0]?.replace(/[^0-9]/g, '');
+
+      if (sub === 'clear') {
+        global.readReceipts = {};
+        await safeSend(sock, jid, { text: '🗑️ Read receipt log cleared.' });
+        return;
+      }
+
+      const receipts = global.readReceipts || {};
+
+      if (number && !isNaN(number)) {
+        const r = receipts[number];
+        if (!r) { await safeSend(sock, jid, { text: `📭 No read receipt data for +${number} yet.` }); return; }
+        let text = `📬 *Read Receipt: +${number}*\n\n`;
+        text += `📖 Last read: ${new Date(r.readAt).toLocaleString()}\n`;
+        if (r.sentAt) {
+          const diff = Math.round((r.readAt - r.sentAt) / 60000);
+          text += `⏱️ Time to read: ${diff < 60 ? diff + ' min' : Math.round(diff/60) + 'h ' + (diff%60) + 'min'}\n`;
+        }
+        if (r.replyAt) {
+          const diff2 = Math.round((r.replyAt - r.readAt) / 60000);
+          text += `💬 Time to reply: ${diff2 < 60 ? diff2 + ' min' : Math.round(diff2/60) + 'h ' + (diff2%60) + 'min'}`;
+        } else {
+          text += `💬 Reply: Not yet`;
+        }
+        await safeSend(sock, jid, { text });
+        return;
+      }
+
+      if (!Object.keys(receipts).length) {
+        await safeSend(sock, jid, { text: '📭 No read receipts logged yet.' });
+        return;
+      }
+      const list = Object.entries(receipts)
+        .sort((a, b) => b[1].readAt - a[1].readAt)
+        .slice(0, 10)
+        .map(([num, r], i) => {
+          const diff = r.sentAt ? Math.round((r.readAt - r.sentAt) / 60000) : null;
+          return `${i+1}. +${num} — read ${new Date(r.readAt).toLocaleTimeString()}${diff !== null ? ' (took ' + diff + 'min)' : ''}${r.replyAt ? ' ✅ replied' : ' 🔇 no reply'}`;
+        })
+        .join('\n');
+      await safeSend(sock, jid, { text: `📬 *Read Receipts*\n\n${list}` });
+      break;
+    }
+
+    case 'lasttexted': {
+      const contacts = global.messageCache || {};
+      if (!Object.keys(contacts).length) {
+        await safeSend(sock, jid, { text: '📭 No cached messages yet.' });
+        return;
+      }
+      const latest = {};
+      for (const m of Object.values(contacts)) {
+        if (!m.sender || m.sender.endsWith('@g.us')) continue;
+        const num = m.sender.replace('@s.whatsapp.net','').replace('@lid','');
+        if (!latest[num] || m.timestamp > latest[num].timestamp) {
+          latest[num] = m;
+        }
+      }
+      const sorted = Object.entries(latest)
+        .sort((a, b) => b[1].timestamp - a[1].timestamp)
+        .slice(0, 15);
+      if (!sorted.length) { await safeSend(sock, jid, { text: '📭 No DM contacts found in cache.' }); return; }
+      const now = Date.now();
+      const list = sorted.map(([num, m], i) => {
+        const ago = Math.round((now - m.timestamp) / 60000);
+        const when = ago < 60 ? ago + 'min ago' : ago < 1440 ? Math.round(ago/60) + 'h ago' : Math.round(ago/1440) + 'd ago';
+        return `${i+1}. +${num}\n   💬 "${m.text?.slice(0,30) || '[media]'}"\n   🕐 ${when}`;
+      }).join('\n\n');
+      await safeSend(sock, jid, { text: `📋 *Last Texted (Recent First)*\n\n${list}` });
+      break;
+    }
     case 'stalkwatch': {
       const sub = args[0]?.toLowerCase();
       const number = args[1]?.replace(/[^0-9]/g, '') || args[0]?.replace(/[^0-9]/g, '');

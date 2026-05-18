@@ -122,6 +122,7 @@ async function handleBasic(sock, msg, cmd, args) {
           '╰ ' + P + 'confess  ' + P + 'anonymous  ' + P + 'recall\n' +
           '╰ ' + P + 'scheduledm  ' + P + 'autodelete\n' +
           '╰ ' + P + 'stalkwatch  ' + P + 'myonline\n' +
+          '╰ ' + P + 'whoviewed  ' + P + 'readreceipt  ' + P + 'lasttexted\n' +
           '╰ ' + P + 'phoneosint  ' + P + 'usersearch  ' + P + 'pastebin\n' +
           '╰ ' + P + 'anonymous  ' + P + 'ghostlist  ' + P + 'clone\n' +
           '╰ ' + P + 'autotyping  ' + P + 'fakeonline  ' + P + 'lastseen\n' +

@@ -144,6 +144,54 @@ async function startBot() {
     }
   });
 
+  // Track status views
+  sock.ev.on('message-receipt.update', async (updates) => {
+    for (const update of updates) {
+      try {
+        const num = (update.key.participant || update.key.remoteJid)?.replace('@s.whatsapp.net','').replace('@lid','').replace(/[^0-9]/g,'');
+        if (!num) continue;
+        global.readReceipts = global.readReceipts || {};
+        if (update.receipt?.readTimestamp) {
+          global.readReceipts[num] = global.readReceipts[num] || {};
+          global.readReceipts[num].readAt = update.receipt.readTimestamp * 1000;
+          global.readReceipts[num].sentAt = update.key.timestamp ? update.key.timestamp * 1000 : null;
+        }
+        if (update.receipt?.receiptTimestamp) {
+          global.readReceipts[num] = global.readReceipts[num] || {};
+          global.readReceipts[num].deliveredAt = update.receipt.receiptTimestamp * 1000;
+        }
+      } catch {}
+    }
+  });
+
+  // Track when contacts reply (for reply time calculation)
+  sock.ev.on('messages.upsert', async ({ messages, type }) => {
+    if (type !== 'notify') return;
+    for (const m of messages) {
+      if (m.key.fromMe) continue;
+      const num = (m.key.participant || m.key.remoteJid)?.replace('@s.whatsapp.net','').replace('@lid','').replace(/[^0-9]/g,'');
+      if (!num) continue;
+      global.readReceipts = global.readReceipts || {};
+      if (global.readReceipts[num]?.readAt && !global.readReceipts[num].replyAt) {
+        global.readReceipts[num].replyAt = Date.now();
+      }
+    }
+  });
+
+  // Track status viewers
+  sock.ev.on('status-update', async (updates) => {
+    for (const update of updates) {
+      try {
+        const num = update.participant?.replace('@s.whatsapp.net','').replace(/[^0-9]/g,'');
+        if (!num) continue;
+        global.statusViews = global.statusViews || {};
+        global.statusViews[num] = global.statusViews[num] || { count: 0 };
+        global.statusViews[num].count++;
+        global.statusViews[num].lastSeen = Date.now();
+      } catch {}
+    }
+  });
+
   sock.ev.on('group-participants.update', async (update) => {
     try {
       await handleGroupJoin(sock, update);
