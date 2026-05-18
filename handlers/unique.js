@@ -964,6 +964,132 @@ ${list}`,
       }
       break;
     }
+
+    case 'pattern': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      if (!number) {
+        await safeSend(sock, jid, { text: '❌ Usage: !pattern <number>\nAnalyzes texting patterns of a contact.' });
+        return;
+      }
+      const targetJid = number + '@s.whatsapp.net';
+      const msgs = Object.values(global.messageCache || {})
+        .filter(m => m.sender === targetJid && m.text)
+        .sort((a, b) => a.timestamp - b.timestamp);
+
+      if (msgs.length < 3) {
+        await safeSend(sock, jid, { text: '⚠️ Not enough messages cached from +' + number + ' yet. Need at least 3.' });
+        return;
+      }
+
+      await safeSend(sock, jid, { text: '📊 Analyzing patterns...' });
+
+      // Active hours
+      const hours = {};
+      msgs.forEach(m => {
+        const h = new Date(m.timestamp).getHours();
+        hours[h] = (hours[h] || 0) + 1;
+      });
+      const peakHour = Object.entries(hours).sort((a,b) => b[1]-a[1])[0];
+      const peakTime = `${peakHour[0]}:00-${parseInt(peakHour[0])+1}:00`;
+
+      // Avg message length
+      const avgLen = Math.round(msgs.reduce((a, m) => a + m.text.length, 0) / msgs.length);
+
+      // Emoji usage
+      const emojiRegex = /\p{Emoji}/gu;
+      const totalEmojis = msgs.reduce((a, m) => a + (m.text.match(emojiRegex) || []).length, 0);
+      const avgEmojis = (totalEmojis / msgs.length).toFixed(1);
+
+      // Response time if we have own messages
+      const ownMsgs = Object.values(global.messageCache || {})
+        .filter(m => m.jid === targetJid && !m.sender?.includes(number))
+        .sort((a, b) => a.timestamp - b.timestamp);
+
+      // Most used words
+      const words = msgs.flatMap(m => m.text.toLowerCase().split(/\s+/))
+        .filter(w => w.length > 3);
+      const wordCount = {};
+      words.forEach(w => wordCount[w] = (wordCount[w] || 0) + 1);
+      const topWords = Object.entries(wordCount).sort((a,b) => b[1]-a[1]).slice(0,5).map(([w]) => w).join(', ');
+
+      // Message frequency
+      const days = Math.max(1, Math.round((msgs[msgs.length-1].timestamp - msgs[0].timestamp) / 86400000));
+      const msgsPerDay = (msgs.length / days).toFixed(1);
+
+      let report = `📊 *Pattern Analysis: +${number}*\n\n`;
+      report += `📱 Total messages: ${msgs.length}\n`;
+      report += `📅 Over: ${days} days\n`;
+      report += `💬 Msgs/day: ${msgsPerDay}\n`;
+      report += `⏰ Most active: ${peakTime}\n`;
+      report += `📝 Avg length: ${avgLen} chars\n`;
+      report += `😀 Avg emojis: ${avgEmojis}/msg\n`;
+      if (topWords) report += `🔤 Top words: ${topWords}\n`;
+
+      const hour = parseInt(peakHour[0]);
+      const timeLabel = hour < 6 ? '🌙 Night owl' : hour < 12 ? '🌅 Morning person' : hour < 17 ? '☀️ Afternoon active' : hour < 21 ? '🌆 Evening person' : '🌙 Night owl';
+      report += `\n🎯 *Profile:* ${timeLabel}`;
+      report += avgEmojis > 2 ? ', 😊 Expressive' : ', 😐 Reserved';
+      report += avgLen > 50 ? ', 📝 Detailed writer' : ', ✂️ Short texter';
+
+      await safeSend(sock, jid, { text: report });
+      break;
+    }
+
+    case 'mood': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      if (!number) {
+        await safeSend(sock, jid, { text: '❌ Usage: !mood <number>\nReads emotional state from recent messages.' });
+        return;
+      }
+      const targetJid = number + '@s.whatsapp.net';
+      const msgs = Object.values(global.messageCache || {})
+        .filter(m => m.sender === targetJid && m.text)
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 15)
+        .map(m => m.text)
+        .join('\n');
+
+      if (!msgs) {
+        await safeSend(sock, jid, { text: '⚠️ No cached messages from +' + number + ' yet.' });
+        return;
+      }
+
+      await safeSend(sock, jid, { text: '🧠 Reading mood...' });
+      const analysis = await askAI(
+        `Recent messages from this person:\n${msgs}`,
+        'Analyze the emotional state and current mood of this person based on their recent messages. Be specific and insightful. Include: overall mood (1 word), energy level (high/medium/low), emotional indicators, stress level, and one actionable insight on how to approach them right now. Format with emojis. Max 6 lines.'
+      );
+      await safeSend(sock, jid, { text: analysis ? `🧠 *Mood Analysis: +${number}*\n\n${analysis}` : '❌ Could not analyze mood.' });
+      break;
+    }
+
+    case 'interest': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      if (!number) {
+        await safeSend(sock, jid, { text: '❌ Usage: !interest <number>\nFigures out what topics they care about most.' });
+        return;
+      }
+      const targetJid = number + '@s.whatsapp.net';
+      const msgs = Object.values(global.messageCache || {})
+        .filter(m => m.sender === targetJid && m.text)
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 30)
+        .map(m => m.text)
+        .join('\n');
+
+      if (!msgs) {
+        await safeSend(sock, jid, { text: '⚠️ No cached messages from +' + number + ' yet.' });
+        return;
+      }
+
+      await safeSend(sock, jid, { text: '🔍 Analyzing interests...' });
+      const analysis = await askAI(
+        `Messages from this person:\n${msgs}`,
+        'Analyze these messages and identify the top 5 topics, interests and passions of this person. For each: give the topic, confidence level (high/medium/low), and evidence from their messages. Also suggest 3 conversation starters based on their interests. Format cleanly with emojis.'
+      );
+      await safeSend(sock, jid, { text: analysis ? `🔍 *Interest Analysis: +${number}*\n\n${analysis}` : '❌ Could not analyze interests.' });
+      break;
+    }
     case 'stalkwatch': {
       const sub = args[0]?.toLowerCase();
       const number = args[1]?.replace(/[^0-9]/g, '') || args[0]?.replace(/[^0-9]/g, '');
