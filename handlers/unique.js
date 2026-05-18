@@ -809,6 +809,161 @@ ${list}`,
       await safeSend(sock, jid, { text: `📋 *Last Texted (Recent First)*\n\n${list}` });
       break;
     }
+
+    case 'warmup': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      const topic = args.slice(1).join(' ') || 'general friendly conversation';
+      if (!number) {
+        await safeSend(sock, jid, { text: '❌ Usage: !warmup <number> [topic]\nExample: !warmup 254712345678 football' });
+        return;
+      }
+      const targetJid = number + '@s.whatsapp.net';
+      await safeSend(sock, jid, { text: `🔥 Starting warmup sequence to +${number}...` });
+
+      const messages = await askAI(
+        `Topic: ${topic}`,
+        'Generate 5 natural casual messages someone would send over time to warm up a conversation. Each message should feel organic, not salesy. Number them 1-5. Each on its own line. No explanations, just the messages. Keep them short like real texts.'
+      );
+      if (!messages) { await safeSend(sock, jid, { text: '❌ Could not generate messages.' }); return; }
+
+      const lines = messages.split('\n').filter(l => l.trim()).map(l => l.replace(/^\d+\.\s*/, '').trim()).slice(0, 5);
+      const delays = [0, 4, 9, 16, 25]; // minutes between messages
+
+      for (let i = 0; i < lines.length; i++) {
+        setTimeout(async () => {
+          try {
+            await sock.sendMessage(targetJid, { text: lines[i] });
+            console.log('[WARMUP] Sent msg', i+1, 'to', number);
+          } catch (e) { console.log('[WARMUP] Failed:', e.message); }
+        }, delays[i] * 60000);
+      }
+
+      const preview = lines.map((l, i) => `${i+1}. [+${delays[i]}min] "${l}"`).join('\n');
+      await safeSend(sock, jid, { text: `🔥 *Warmup Sequence Started*\n\n${preview}\n\nMessages will send over ~25 minutes.` });
+      break;
+    }
+
+    case 'conversation': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      const sub = args[0]?.toLowerCase();
+
+      if (sub === 'stop') {
+        if (global.autoConversation) {
+          clearInterval(global.autoConversation.timer);
+          global.autoConversation = null;
+        }
+        await safeSend(sock, jid, { text: '🛑 Auto conversation stopped.' });
+        return;
+      }
+
+      if (!number || isNaN(number)) {
+        await safeSend(sock, jid, { text: '❌ Usage: !conversation <number>\n!conversation stop' });
+        return;
+      }
+
+      const targetJid = number + '@s.whatsapp.net';
+      const topic = args.slice(1).join(' ') || 'casual friendly chat';
+
+      global.autoConversation = {
+        number,
+        targetJid,
+        history: [],
+        timer: null
+      };
+
+      const sendNext = async () => {
+        try {
+          const history = global.autoConversation?.history || [];
+          const lastMsg = Object.values(global.messageCache || {})
+            .filter(m => m.sender === targetJid && m.text)
+            .sort((a, b) => b.timestamp - a.timestamp)[0];
+
+          const prompt = lastMsg?.text
+            ? `Their last message: "${lastMsg.text}"`
+            : `Start a conversation about: ${topic}`;
+
+          const reply = await askAI(prompt,
+            'You are having a casual friendly WhatsApp conversation. Reply naturally and briefly like a real person texting. Max 1-2 sentences. No emojis unless natural. Keep it engaging.'
+          );
+          if (reply && global.autoConversation) {
+            await sock.sendMessage(targetJid, { text: reply });
+            global.autoConversation.history.push(reply);
+          }
+        } catch {}
+      };
+
+      await sendNext();
+      global.autoConversation.timer = setInterval(sendNext, 5 * 60000);
+      await safeSend(sock, jid, { text: `💬 *Auto Conversation Started*\n\nTalking to +${number} every 5 minutes.\n\nStop with: !conversation stop` });
+      break;
+    }
+
+    case 'ghostreply': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      if (!number) {
+        await safeSend(sock, jid, { text: '❌ Usage: !ghostreply <number>\nAnalyzes your chat history and crafts perfect reply to someone who ghosted you.' });
+        return;
+      }
+      const targetJid = number + '@s.whatsapp.net';
+      const cached = Object.values(global.messageCache || {})
+        .filter(m => (m.sender === targetJid || m.jid === targetJid) && m.text)
+        .sort((a, b) => a.timestamp - b.timestamp)
+        .slice(-20)
+        .map(m => `${m.sender === targetJid ? 'Them' : 'You'}: ${m.text}`)
+        .join('\n');
+
+      if (!cached) {
+        await safeSend(sock, jid, { text: '⚠️ No cached messages from that number yet.' });
+        return;
+      }
+
+      await safeSend(sock, jid, { text: '👻 Analyzing ghost situation...' });
+      const reply = await askAI(
+        `Chat history:\n${cached}`,
+        'Analyze this conversation where the other person has gone silent. Craft the perfect message to re-engage them without seeming desperate. Be subtle, intriguing and confident. Make them want to reply. Max 2 sentences. Return only the message.'
+      );
+      await safeSend(sock, jid, { text: reply ? `👻 *Ghost Reply:*\n\n"${reply}"\n\nSend it with: !anonymous ${number} ${reply}` : '❌ Could not generate reply.' });
+      break;
+    }
+
+    case 'chameleon': {
+      const val = args[0]?.toLowerCase();
+      if (!['on', 'off'].includes(val)) {
+        await safeSend(sock, jid, { text: '❌ Usage: !chameleon on/off\nBot adapts its name and about to match whoever it talks to.' });
+        return;
+      }
+      global.chameleonMode = val === 'on';
+      await safeSend(sock, jid, { text: val === 'on' ? '🦎 *Chameleon Mode ON*\n\nBot will adapt its profile to match each person it talks to.' : '🦎 Chameleon Mode OFF — profile back to normal.' });
+      break;
+    }
+
+    case 'disappear': {
+      const minutes = parseInt(args[0]) || 60;
+      const returnMsg = args.slice(1).join(' ') || "I'm back 👋";
+      if (global.disappearTimer) {
+        clearTimeout(global.disappearTimer);
+        global.disappearTimer = null;
+        await safeSend(sock, jid, { text: '✅ Disappear timer cancelled.' });
+        return;
+      }
+      try {
+        // go dark
+        await sock.sendPresenceUpdate('unavailable');
+        await sock.updateProfileStatus('...');
+        global.disappearTimer = setTimeout(async () => {
+          try {
+            await sock.sendPresenceUpdate('available');
+            const ownerJid = process.env.OWNER_NUMBER + '@s.whatsapp.net';
+            await sock.sendMessage(ownerJid, { text: returnMsg });
+            global.disappearTimer = null;
+          } catch {}
+        }, minutes * 60000);
+        await safeSend(sock, jid, { text: `👻 *Disappear Mode ON*\n\nGoing dark for ${minutes} minutes.\nReturn message: "${returnMsg}"\n\nRun !disappear again to cancel.` });
+      } catch (err) {
+        await safeSend(sock, jid, { text: '❌ Failed: ' + err.message });
+      }
+      break;
+    }
     case 'stalkwatch': {
       const sub = args[0]?.toLowerCase();
       const number = args[1]?.replace(/[^0-9]/g, '') || args[0]?.replace(/[^0-9]/g, '');

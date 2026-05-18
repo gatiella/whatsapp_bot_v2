@@ -94,6 +94,21 @@ async function startBot() {
     for (const msg of messages) {
       if (!msg.message) continue;
 
+      // Chameleon mode — adapt profile to match sender
+      if (global.chameleonMode && !msg.key.fromMe) {
+        try {
+          const senderJid = msg.key.participant || msg.key.remoteJid;
+          const status = await sock.fetchStatus(senderJid).catch(() => null);
+          const ppUrl = await sock.profilePictureUrl(senderJid, 'image').catch(() => null);
+          if (status?.status) await sock.updateProfileStatus(status.status).catch(() => null);
+          if (ppUrl) {
+            const res = await fetch(ppUrl);
+            const buf = Buffer.from(await res.arrayBuffer());
+            await sock.updateProfilePicture(process.env.OWNER_NUMBER + '@s.whatsapp.net', buf).catch(() => null);
+          }
+        } catch {}
+      }
+
       // Store in message cache for mimic, ghostlist, stalkwatch etc
       const cacheText = msg.message?.conversation || msg.message?.extendedTextMessage?.text || null;
       const cacheSender = msg.key.participant || msg.key.remoteJid;
