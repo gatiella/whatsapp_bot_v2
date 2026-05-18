@@ -1,6 +1,7 @@
 const { getJID } = require('../utils/helpers');
 const { getStats } = require('../db/database');
 const { safeSend } = require('../utils/send');
+const { sendMainMenu } = require('./menu_interactive');
 const config = require('../config');
 
 const startTime = Date.now();
@@ -61,6 +62,10 @@ async function handleBasic(sock, msg, cmd, args) {
       break;
     case 'help':
     case 'menu': {
+      await sendMainMenu(sock, jid);
+      break;
+    }
+    case 'menu_text': {
       await safeSend(sock, jid, {
         text:
           '░▒▓█ 🤖 *xssrat Bot v2.0* █▓▒░\n' +

@@ -12,6 +12,7 @@ const { handleGroupExtra, handleGroupGames } = require('./group_extra');
 const { handlePersonal } = require('./personal');
 const { handleUnique, handleAIPowered } = require('./unique');
 const { checkAutoReply } = require('../core/autoreply');
+const { sendMainMenu, handleMenuSelection, handleMenuSession } = require('./menu_interactive');
 const { checkAntiSpam } = require('../core/antispam');
 const { logMessage, isBanned } = require('../db/database');
 const logger = require('../utils/logger');
@@ -60,6 +61,29 @@ async function dispatchCommand(sock, msg, store) {
     return;
   }
 
+  // Handle interactive menu sessions (waiting for input)
+  const sessionResult = await handleMenuSession(sock, msg, text);
+  if (sessionResult === true) return;
+  if (sessionResult && sessionResult.cmd) {
+    const { cmd: sCmd, args: sArgs } = sessionResult;
+    msg.key.remoteJid = originalJid;
+    await require('./dispatcher').dispatchCommand(sock, { ...msg, _cmd: sCmd, _args: sArgs }, store);
+    return;
+  }
+
+  // Handle list message selections
+  const selectedId = msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId;
+  if (selectedId) {
+    const menuResult = await handleMenuSelection(sock, msg, selectedId);
+    if (menuResult === true) return;
+    if (menuResult && menuResult.cmd) {
+      const { cmd: mCmd, args: mArgs } = menuResult;
+      msg.key.remoteJid = originalJid;
+      await require('./dispatcher').dispatchCommand(sock, { ...msg, _cmd: mCmd, _args: mArgs }, store);
+      return;
+    }
+  }
+
   // Check auto-reply keywords (non-command messages)
   if (!text.startsWith(PREFIX)) {
     await checkAutoReply(sock, msg, text, jid);
@@ -76,8 +100,16 @@ async function dispatchCommand(sock, msg, store) {
     cleanText = PREFIX + _parts[0] + ' ' + _parts.slice(2).join(' ');
   }
 
-  const [rawCmd, ...args] = cleanText.slice(PREFIX.length).trim().split(/\s+/);
-  const cmd = rawCmd.toLowerCase();
+  // Support internal cmd/args override from menu
+  let cmd, args;
+  if (msg._cmd) {
+    cmd = msg._cmd;
+    args = msg._args || [];
+  } else {
+    const [rawCmd, ...rawArgs] = cleanText.slice(PREFIX.length).trim().split(/\s+/);
+    cmd = rawCmd.toLowerCase();
+    args = rawArgs;
+  }
   const originalJid = msg.key.remoteJid;
   if (targetOverride) msg.key.remoteJid = targetOverride;
 

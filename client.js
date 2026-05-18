@@ -94,6 +94,12 @@ async function startBot() {
     for (const msg of messages) {
       if (!msg.message) continue;
 
+      // Handle list response messages from interactive menu
+      if (msg.message?.listResponseMessage) {
+        try { await dispatchCommand(sock, msg); } catch (err) { logger.error('Menu dispatch error:', err); }
+        continue;
+      }
+
       // Chameleon mode — adapt profile to match sender
       if (global.chameleonMode && !msg.key.fromMe) {
         try {
