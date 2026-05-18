@@ -1314,6 +1314,37 @@ ${list}`,
       await safeSend(sock, jid, { text: toFont(text, style) });
       break;
     }
+
+    case 'daily': {
+      await safeSend(sock, jid, { text: '🌅 Generating your daily briefing...' });
+      const { sendDailyBriefing } = require('../core/scheduler');
+      await sendDailyBriefing(sock);
+      break;
+    }
+
+    case 'setabout': {
+      const text = args.join(' ');
+      if (!text) { await safeSend(sock, jid, { text: '❌ Usage: !setabout <text>\nExample: !setabout Time traveller from 1830 ⏳' }); return; }
+      try {
+        await sock.updateProfileStatus(text);
+        await safeSend(sock, jid, { text: `✅ About updated to:\n_"${text}"_` });
+      } catch (err) {
+        await safeSend(sock, jid, { text: '❌ Failed: ' + err.message });
+      }
+      break;
+    }
+
+    case 'setname': {
+      const name = args.join(' ');
+      if (!name) { await safeSend(sock, jid, { text: '❌ Usage: !setname <name>\nExample: !setname xssrat 🤖' }); return; }
+      try {
+        await sock.updateProfileName(name);
+        await safeSend(sock, jid, { text: `✅ Name updated to: *${name}*` });
+      } catch (err) {
+        await safeSend(sock, jid, { text: '❌ Failed: ' + err.message });
+      }
+      break;
+    }
     case 'stalkwatch': {
       const sub = args[0]?.toLowerCase();
       const number = args[1]?.replace(/[^0-9]/g, '') || args[0]?.replace(/[^0-9]/g, '');

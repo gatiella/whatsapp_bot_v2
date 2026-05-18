@@ -142,7 +142,8 @@ async function handleBasic(sock, msg, cmd, args) {
 
           '🧠 *PERSONAL*\n' +
           '╰ ' + P + 'journal  ' + P + 'myjournal\n' +
-          '╰ ' + P + 'motivate  ' + P + 'vent  ' + P + 'affirmation\n\n' +
+          '╰ ' + P + 'motivate  ' + P + 'vent  ' + P + 'affirmation\n' +
+          '╰ ' + P + 'daily\n\n' +
 
           '🔐 *ADMIN*\n' +
           '╰ ' + P + 'ban  ' + P + 'unban  ' + P + 'setprefix\n' +

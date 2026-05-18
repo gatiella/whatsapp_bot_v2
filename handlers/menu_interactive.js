@@ -72,6 +72,9 @@ const SUB_MENUS = {
       { n: '10', cmd: 'disappear', label: '💨 Disappear', needsText: true, prompt: 'Enter minutes (e.g. 30):' },
       { n: '11', cmd: 'stylemode on', label: '🎭 Style Mode ON', needsNumber: true },
       { n: '12', cmd: 'stylemode off', label: '🎭 Style Mode OFF', direct: true },
+      { n: '13', cmd: 'setabout', label: '📝 Set About', needsText: true, prompt: 'Enter new about text:' },
+      { n: '14', cmd: 'setname', label: '👤 Set Name', needsText: true, prompt: 'Enter new display name:' },
+      { n: '15', cmd: 'clone', label: '🔄 Clone Profile', needsNumber: true },
     ]
   },
   '5': {
