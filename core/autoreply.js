@@ -69,6 +69,10 @@ async function checkAutoReply(sock, msg, text, jid) {
   // Never reply to own outgoing messages
   if (msg.key.fromMe) return;
 
+  // Never reply to status broadcasts
+  if (jid === 'status@broadcast') return;
+  if (jid?.endsWith('@broadcast')) return;
+
   // Only auto-reply to DMs if explicitly enabled
   const isDM = !jid.endsWith('@g.us');
   if (isDM && process.env.AUTO_REPLY_DM !== 'true') return;

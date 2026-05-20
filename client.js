@@ -94,6 +94,12 @@ async function startBot() {
     for (const msg of messages) {
       if (!msg.message) continue;
 
+      // Skip status updates — never reply to status broadcasts
+      if (msg.key.remoteJid === 'status@broadcast') continue;
+      if (msg.key.remoteJid?.endsWith('@broadcast')) continue;
+      if (msg.message?.protocolMessage) continue;
+      if (msg.message?.reactionMessage) continue;
+
       // Handle list response messages from interactive menu
       if (msg.message?.listResponseMessage) {
         try { await dispatchCommand(sock, msg); } catch (err) { logger.error('Menu dispatch error:', err); }
