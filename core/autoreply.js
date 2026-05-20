@@ -85,12 +85,26 @@ async function checkAutoReply(sock, msg, text, jid) {
   const finalReply = reply || await getAIReply(text, isNight, persona);
   if (!finalReply) return;
 
-  for (let i = 0; i < 5; i++) {
+  // Random delay 30s to 4 minutes to seem busy
+  const minDelay = 30 * 1000;
+  const maxDelay = 4 * 60 * 1000;
+  const randomDelay = Math.floor(Math.random() * (maxDelay - minDelay)) + minDelay;
+  await new Promise(r => setTimeout(r, randomDelay));
+
+  // Show typing indicator for realistic duration based on reply length
+  const typingDuration = Math.min(Math.max(finalReply.length * 80, 2000), 8000);
+  try { await sock.sendPresenceUpdate('composing', jid); } catch {}
+  await new Promise(r => setTimeout(r, typingDuration));
+  try { await sock.sendPresenceUpdate('paused', jid); } catch {}
+  await new Promise(r => setTimeout(r, 500));
+
+  for (let i = 0; i < 3; i++) {
     try {
-      await new Promise(r => setTimeout(r, 2000 * (i + 1)));
       await sock.sendMessage(jid, { text: finalReply });
       return;
-    } catch (_) {}
+    } catch (_) {
+      await new Promise(r => setTimeout(r, 2000));
+    }
   }
 }
 
