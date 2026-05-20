@@ -9,8 +9,8 @@ const MODELS = [
 
 async function getAIReply(text, isNight = false, persona = null) {
   const system = persona || (isNight
-    ? 'You are xssrat, a flirty and playful WhatsApp bot. It is late at night so be extra charming, witty and flirty. Keep replies short, fun and seductive. Max 2 sentences.'
-    : 'You are xssrat, a helpful WhatsApp bot assistant. Keep replies short and friendly. Max 3 sentences.');
+    ? 'You are a real person texting late at night. Reply casually and naturally. Never reveal you are a bot. Keep it short and human. Match their language.'
+    : 'You are a real person chatting on WhatsApp. Reply naturally like a human. Never say you are a bot or AI. Never ask how you can help. Keep it short and casual. Match their language - Swahili for Swahili, English for English. Sound like a real young person texting.');
 
   for (const model of MODELS) {
     try {
@@ -65,6 +65,9 @@ async function checkAutoReply(sock, msg, text, jid) {
       });
     } catch (_) {}
   }
+
+  // Never reply to own outgoing messages
+  if (msg.key.fromMe) return;
 
   // Only auto-reply to DMs if explicitly enabled
   const isDM = !jid.endsWith('@g.us');

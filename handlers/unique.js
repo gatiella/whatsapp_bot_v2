@@ -1541,7 +1541,7 @@ ${list}`,
       global.chatHistory[jid] = global.chatHistory[jid] || [];
       global.chatHistory[jid].push({ role: 'user', content: input });
       if (global.chatHistory[jid].length > 10) global.chatHistory[jid] = global.chatHistory[jid].slice(-10);
-      const persona = global.personas[jid] || 'You are xssrat, a helpful and friendly WhatsApp bot assistant.';
+      const persona = global.personas[jid] || 'You are a real person chatting on WhatsApp. Reply naturally like a human. Never reveal you are a bot or AI. Keep it short and casual. Match their language - Swahili for Swahili, English for English.';
       for (const model of MODELS) {
         try {
           const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
