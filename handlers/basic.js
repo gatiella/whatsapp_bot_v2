@@ -62,7 +62,92 @@ async function handleBasic(sock, msg, cmd, args) {
       break;
     case 'help':
     case 'menu': {
-      await sendMainMenu(sock, jid);
+      const P = config.PREFIX || '!';
+      await safeSend(sock, jid, {
+        text:
+          '░▒▓█ 🤖 *xssrat Bot v2.0* █▓▒░\n' +
+          '▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n\n' +
+
+          '🔧 *BASIC*\n' +
+          '╰ ' + P + 'ping  ' + P + 'uptime  ' + P + 'info  ' + P + 'id\n' +
+          '╰ ' + P + 'groupon  ' + P + 'groupoff  ' + P + 'font\n\n' +
+
+          '👥 *GROUP*\n' +
+          '╰ ' + P + 'kick  ' + P + 'add  ' + P + 'promote  ' + P + 'demote\n' +
+          '╰ ' + P + 'rename  ' + P + 'warn  ' + P + 'mute  ' + P + 'poll\n' +
+          '╰ ' + P + 'tagall  ' + P + 'rules  ' + P + 'vote  ' + P + 'raffle\n' +
+          '╰ ' + P + 'welcome  ' + P + 'antispam  ' + P + 'antilink\n' +
+          '╰ ' + P + 'leaderboard  ' + P + 'inactive  ' + P + 'ghostlist\n\n' +
+
+          '🤖 *AI*\n' +
+          '╰ ' + P + 'ask  ' + P + 'ai  ' + P + 'code  ' + P + 'imagine\n' +
+          '╰ ' + P + 'summarize  ' + P + 'translate  ' + P + 'sentiment\n' +
+          '╰ ' + P + 'story  ' + P + 'poem  ' + P + 'recipe  ' + P + 'debate\n' +
+          '╰ ' + P + 'explain  ' + P + 'compare  ' + P + 'advice\n' +
+          '╰ ' + P + 'chat  ' + P + 'persona  ' + P + 'clearchat\n\n' +
+
+          '🎮 *FUN*\n' +
+          '╰ ' + P + 'joke  ' + P + 'fact  ' + P + 'riddle  ' + P + 'trivia\n' +
+          '╰ ' + P + '8ball  ' + P + 'horoscope  ' + P + 'coinflip\n' +
+          '╰ ' + P + 'truth  ' + P + 'dare  ' + P + 'spicydare\n' +
+          '╰ ' + P + 'spin  ' + P + 'rps\n\n' +
+
+          '💕 *FLIRT*\n' +
+          '╰ ' + P + 'seduce  ' + P + 'pickup  ' + P + 'compliment\n' +
+          '╰ ' + P + 'rizz  ' + P + 'roast  ' + P + 'couple  ' + P + 'wyr\n' +
+          '╰ ' + P + 'lovemeter  ' + P + 'shipname  ' + P + 'loveadvice\n' +
+          '╰ ' + P + 'suggestreply\n\n' +
+
+          '🌍 *INFO & TOOLS*\n' +
+          '╰ ' + P + 'weather  ' + P + 'news  ' + P + 'crypto\n' +
+          '╰ ' + P + 'stock  ' + P + 'define  ' + P + 'ip\n' +
+          '╰ ' + P + 'calc  ' + P + 'convert  ' + P + 'time\n' +
+          '╰ ' + P + 'qr  ' + P + 'password\n\n' +
+
+          '✍️ *WRITING*\n' +
+          '╰ ' + P + 'grammar  ' + P + 'rewrite  ' + P + 'emoji\n' +
+          '╰ ' + P + 'bio  ' + P + 'caption  ' + P + 'name\n' +
+          '╰ ' + P + 'summarizelink\n\n' +
+
+          '📝 *PRODUCTIVITY*\n' +
+          '╰ ' + P + 'remind  ' + P + 'todo  ' + P + 'note\n' +
+          '╰ ' + P + 'schedule  ' + P + 'broadcast  ' + P + 'stats\n' +
+          '╰ ' + P + 'autoreply  ' + P + 'daily\n\n' +
+
+          '💼 *PROFESSIONAL*\n' +
+          '╰ ' + P + 'meeting  ' + P + 'email  ' + P + 'cv\n' +
+          '╰ ' + P + 'invoice  ' + P + 'quiz  ' + P + 'coverlettr\n\n' +
+
+          '🕵️ *SPECIAL*\n' +
+          '╰ ' + P + 'stalk  ' + P + 'phoneosint  ' + P + 'expose\n' +
+          '╰ ' + P + 'usersearch  ' + P + 'pastebin  ' + P + 'stalkwatch\n' +
+          '╰ ' + P + 'whoviewed  ' + P + 'readreceipt  ' + P + 'lasttexted\n' +
+          '╰ ' + P + 'ghostmode  ' + P + 'spy  ' + P + 'busy\n' +
+          '╰ ' + P + 'fakeonline  ' + P + 'autotyping  ' + P + 'lastseen\n' +
+          '╰ ' + P + 'anonymous  ' + P + 'fake  ' + P + 'impersonate\n' +
+          '╰ ' + P + 'clone  ' + P + 'stylemode  ' + P + 'chameleon\n' +
+          '╰ ' + P + 'disappear  ' + P + 'recallall  ' + P + 'recall\n' +
+          '╰ ' + P + 'mimic  ' + P + 'scheduledm  ' + P + 'autodelete\n' +
+          '╰ ' + P + 'nightmode  ' + P + 'myonline  ' + P + 'setname\n' +
+          '╰ ' + P + 'setabout  ' + P + 'sendfrom\n\n' +
+
+          '🧠 *INTELLIGENCE*\n' +
+          '╰ ' + P + 'mood  ' + P + 'pattern  ' + P + 'interest\n' +
+          '╰ ' + P + 'liedetect  ' + P + 'manipulate  ' + P + 'influence\n' +
+          '╰ ' + P + 'warmup  ' + P + 'conversation  ' + P + 'ghostreply\n' +
+          '╰ ' + P + 'decode  ' + P + 'predict  ' + P + 'redalert\n\n' +
+
+          '🧘 *PERSONAL*\n' +
+          '╰ ' + P + 'journal  ' + P + 'myjournal  ' + P + 'motivate\n' +
+          '╰ ' + P + 'vent  ' + P + 'affirmation  ' + P + 'sentiment\n\n' +
+
+          '🔐 *ADMIN*\n' +
+          '╰ ' + P + 'ban  ' + P + 'unban  ' + P + 'setprefix\n' +
+          '╰ ' + P + 'addkeyword  ' + P + 'delkeyword  ' + P + 'logs\n\n' +
+
+          '▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n' +
+          '👑 *Owner:* xssrat  |  ⚡ *120+ cmds*',
+      });
       break;
     }
     case 'menu_text': {
