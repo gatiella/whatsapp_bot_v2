@@ -82,8 +82,103 @@ async function checkAutoReply(sock, msg, text, jid) {
   const reply = getKeywordReply(text);
   const persona = global.personas?.[jid] || null;
   const isNight = isNightModeActive(jid);
-  const finalReply = reply || await getAIReply(text, isNight, persona);
+  // Build conversation context for this sender
+  const senderKey = (msg.key.participant || msg.key.remoteJid).replace('@s.whatsapp.net','').replace('@lid','');
+  global.dmHistory = global.dmHistory || {};
+  global.dmHistory[senderKey] = global.dmHistory[senderKey] || [];
+  global.dmPending = global.dmPending || {};
+
+  // Store incoming message
+  global.dmHistory[senderKey].push({ role: 'user', content: text, time: Date.now() });
+  if (global.dmHistory[senderKey].length > 20) global.dmHistory[senderKey] = global.dmHistory[senderKey].slice(-20);
+
+  // Check if there are multiple unanswered messages — consolidate
+  global.dmPending[senderKey] = global.dmPending[senderKey] || [];
+  global.dmPending[senderKey].push(text);
+
+  // If already waiting to reply, let the pending queue handle it
+  if (global.dmPending[senderKey].length > 1) return;
+
+  // Wait a moment to catch rapid messages
+  await new Promise(r => setTimeout(r, 3000));
+  const allPending = global.dmPending[senderKey].join(' | ');
+  global.dmPending[senderKey] = [];
+
+  // Detect emotional tone
+  const upsetWords = ['upset', 'angry', 'sad', 'hurt', 'disappointed', 'stressed', 'crying', 'depressed', 'alone', 'failed', 'sucks', 'hate', 'worst', 'terrible', 'horrible', 'naskia vibaya', 'nahuzunishwa', 'naumia', 'naomboleza', 'nalia'];
+  const flirtWords = ['cute', 'handsome', 'beautiful', 'miss you', 'love you', 'nakupenda', 'nakukosa', 'thinking of you', 'nakufikiria', 'babe', 'baby', 'sweetheart', 'darling', 'marry me', 'date'];
+  const isUpset = upsetWords.some(w => allPending.toLowerCase().includes(w));
+  const isFlirting = flirtWords.some(w => allPending.toLowerCase().includes(w));
+
+  // Build history context
+  const history = global.dmHistory[senderKey].slice(-8).map(h => `${h.role === 'user' ? 'Them' : 'You'}: ${h.content}`).join('\n');
+
+  // Build dynamic system prompt based on detected tone
+  let dynamicPersona = persona || 'You are xssrat, a real Kenyan software engineer in your 20s. Mature, calm, direct, no emojis, no formal language. Never reveal you are a bot.';
+
+  if (isUpset) {
+    dynamicPersona += ' This person seems upset or going through something hard. Be extra caring, warm and supportive. Listen more than you talk. Show genuine empathy without being over the top.';
+  } else if (isFlirting) {
+    dynamicPersona += ' This person seems to be flirting. Match their energy naturally - be charming, a bit playful but keep it mature and real. Do not be overly forward.';
+  }
+
+  if (global.dmHistory[senderKey].length > 3) {
+    dynamicPersona += ' You have been talking for a while. Reference earlier parts of the conversation naturally when relevant. Show that you remember what was said.';
+  }
+
+  const contextPrompt = history ? `Conversation so far:\n${history}\n\nLatest: ${allPending}` : allPending;
+  const finalReply = reply || await getAIReply(contextPrompt, isNight, dynamicPersona);
   if (!finalReply) return;
+
+  // Human quirks — sometimes do something unexpected instead of full reply
+  const quirksRoll = Math.random();
+
+  // 8% chance — react with emoji only, no text reply
+  if (quirksRoll < 0.08) {
+    const reactions = ['😂', '😮', '👀', '🔥', '💀', '😭', '🤣', '👍', '😅', '🤔'];
+    const reaction = reactions[Math.floor(Math.random() * reactions.length)];
+    try {
+      await sock.sendMessage(jid, {
+        react: { text: reaction, key: msg.key }
+      });
+    } catch {}
+    return;
+  }
+
+  // 10% chance — one word reply then go silent
+  if (quirksRoll < 0.18) {
+    const oneWords = ['haha', 'damn', 'lol', 'wow', 'sawa', 'true', 'facts', 'nah', 'yeah', 'maze', 'kweli', 'interesting', 'noted', 'ok', 'ehe'];
+    const word = oneWords[Math.floor(Math.random() * oneWords.length)];
+    const shortDelay = Math.floor(Math.random() * 60000) + 15000;
+    await new Promise(r => setTimeout(r, shortDelay));
+    try { await sock.sendPresenceUpdate('composing', jid); } catch {}
+    await new Promise(r => setTimeout(r, 800));
+    try { await sock.sendPresenceUpdate('paused', jid); } catch {}
+    await new Promise(r => setTimeout(r, 300));
+    try { await sock.sendMessage(jid, { text: word }); } catch {}
+    return;
+  }
+
+  // 7% chance — voice note placeholder
+  if (quirksRoll < 0.25) {
+    const voiceNotes = [
+      "couldn't type rn but basically yeah",
+      "maze si rahisi kuandika, but basically niko sawa",
+      "long story, but the short version is yeah",
+      "hard to explain in text but basically same",
+      "niko busy but basically sawa tu",
+      "couldn't type, but you get the point",
+    ];
+    const vn = voiceNotes[Math.floor(Math.random() * voiceNotes.length)];
+    const vnDelay = Math.floor(Math.random() * 90000) + 20000;
+    await new Promise(r => setTimeout(r, vnDelay));
+    try { await sock.sendPresenceUpdate('recording', jid); } catch {}
+    await new Promise(r => setTimeout(r, Math.floor(Math.random() * 4000) + 2000));
+    try { await sock.sendPresenceUpdate('paused', jid); } catch {}
+    await new Promise(r => setTimeout(r, 500));
+    try { await sock.sendMessage(jid, { text: vn }); } catch {}
+    return;
+  }
 
   // Random delay 30s to 4 minutes to seem busy
   const minDelay = 30 * 1000;
@@ -101,6 +196,9 @@ async function checkAutoReply(sock, msg, text, jid) {
   for (let i = 0; i < 3; i++) {
     try {
       await sock.sendMessage(jid, { text: finalReply });
+      // Store bot reply in history
+      global.dmHistory[senderKey] = global.dmHistory[senderKey] || [];
+      global.dmHistory[senderKey].push({ role: 'assistant', content: finalReply, time: Date.now() });
       return;
     } catch (_) {
       await new Promise(r => setTimeout(r, 2000));
