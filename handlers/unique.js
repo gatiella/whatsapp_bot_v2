@@ -1345,6 +1345,42 @@ ${list}`,
       }
       break;
     }
+
+    case 'remember': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      const note = args.slice(1).join(' ');
+      if (!number || !note) {
+        await safeSend(sock, jid, { text: '❌ Usage: !remember <number> <note>\nExample: !remember 254712345678 likes football, works at Safaricom' });
+        return;
+      }
+      const { addNote, upsertContact } = require('../core/memory');
+      upsertContact(number, {});
+      addNote(number, note);
+      await safeSend(sock, jid, { text: '✅ Noted about +' + number });
+      break;
+    }
+
+    case 'contactinfo': {
+      const number = args[0]?.replace(/[^0-9]/g, '');
+      if (!number) { await safeSend(sock, jid, { text: '❌ Usage: !contactinfo <number>' }); return; }
+      const { getContact } = require('../core/memory');
+      const contact = getContact(number);
+      if (!contact) { await safeSend(sock, jid, { text: '❌ No memory for +' + number + ' yet.' }); return; }
+      const topics = JSON.parse(contact.topics || '[]');
+      const notes = JSON.parse(contact.notes || '[]');
+      const days = Math.floor((Date.now() - contact.last_contact) / 86400000);
+      let text = '*Contact Memory: +' + number + '*\n\n';
+      if (contact.name) text += 'Name: ' + contact.name + '\n';
+      text += 'Messages: ' + contact.message_count + '\n';
+      text += 'Last contact: ' + (days === 0 ? 'today' : days + ' days ago') + '\n';
+      if (topics.length) text += 'Topics: ' + topics.join(', ') + '\n';
+      if (contact.is_flirty) text += 'Flirty: yes\n';
+      if (contact.is_annoying) text += 'Annoying: yes\n';
+      if (contact.is_bot_tester) text += 'Tested bot: yes\n';
+      if (notes.length) text += 'Notes: ' + notes.map(n => n.note).join(', ');
+      await safeSend(sock, jid, { text });
+      break;
+    }
     case 'stalkwatch': {
       const sub = args[0]?.toLowerCase();
       const number = args[1]?.replace(/[^0-9]/g, '') || args[0]?.replace(/[^0-9]/g, '');

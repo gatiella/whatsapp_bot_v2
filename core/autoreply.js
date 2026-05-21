@@ -1,4 +1,5 @@
 const { getKeywordReply } = require('../db/database');
+const { getContact, upsertContact, addTopic, buildContactContext } = require('./memory');
 const { isNightModeActive } = require('../handlers/special');
 
 const MODELS = [
@@ -94,6 +95,51 @@ async function checkAutoReply(sock, msg, text, jid) {
   const reply = getKeywordReply(text);
   const persona = global.personas?.[jid] || null;
   const isNight = isNightModeActive(jid);
+  // Update contact memory
+  const cleanNumber = senderKey.replace(/[^0-9]/g, '');
+  if (cleanNumber) {
+    upsertContact(cleanNumber, {});
+
+    // Detect bot tester
+    const botTestWords = ['are you a bot', 'are you human', 'are you real', 'bot', 'ai', 'robot', 'chatbot', 'automated'];
+    if (botTestWords.some(w => text.toLowerCase().includes(w))) {
+      upsertContact(cleanNumber, { is_bot_tester: 1 });
+    }
+
+    // Detect annoying/needy
+    const annoyingWords = ['reply me', 'answer me', 'why arent you replying', 'hello hello', 'you there', 'read my message'];
+    if (annoyingWords.some(w => text.toLowerCase().includes(w))) {
+      const contact = getContact(cleanNumber);
+      if (contact && contact.message_count > 5) {
+        upsertContact(cleanNumber, { is_annoying: 1 });
+      }
+    }
+
+    // Detect topics
+    const topicMap = {
+      'football': ['football', 'soccer', 'match', 'goal', 'premier league', 'epl'],
+      'tech': ['code', 'programming', 'software', 'app', 'website', 'hack', 'cyber'],
+      'money': ['money', 'cash', 'pesa', 'broke', 'rich', 'business', 'hustle'],
+      'music': ['music', 'song', 'artist', 'album', 'playlist', 'banger'],
+      'relationships': ['girl', 'boy', 'girlfriend', 'boyfriend', 'dating', 'love', 'crush'],
+      'school': ['school', 'uni', 'college', 'exam', 'study', 'class'],
+    };
+    for (const [topic, words] of Object.entries(topicMap)) {
+      if (words.some(w => text.toLowerCase().includes(w))) {
+        addTopic(cleanNumber, topic);
+      }
+    }
+
+    // Extract name if they introduce themselves
+    const nameMatch = text.match(/(?:i am|i'm|my name is|call me|naitwa|mimi ni)\s+([A-Z][a-z]+)/i);
+    if (nameMatch) {
+      upsertContact(cleanNumber, { name: nameMatch[1] });
+    }
+  }
+
+  // Build contact context for AI
+  const contactContext = cleanNumber ? buildContactContext(cleanNumber) : null;
+
   // Build conversation context for this sender
   const senderKey = (msg.key.participant || msg.key.remoteJid).replace('@s.whatsapp.net','').replace('@lid','');
   global.dmHistory = global.dmHistory || {};
@@ -136,6 +182,11 @@ async function checkAutoReply(sock, msg, text, jid) {
 
   if (global.dmHistory[senderKey].length > 3) {
     dynamicPersona += ' You have been talking for a while. Reference earlier parts of the conversation naturally when relevant. Show that you remember what was said.';
+  }
+
+  // Add contact memory context to persona
+  if (contactContext) {
+    dynamicPersona += ' CONTACT MEMORY: ' + contactContext;
   }
 
   const contextPrompt = history ? `Conversation so far:\n${history}\n\nLatest: ${allPending}` : allPending;
