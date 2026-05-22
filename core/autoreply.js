@@ -99,8 +99,7 @@ async function _checkAutoReply(sock, msg, text, jid) {
   const reply = getKeywordReply(text);
   const persona = global.personas?.[jid] || null;
   const isNight = isNightModeActive(jid);
-  // Update contact memory
-  const cleanNumber = senderKey.replace(/[^0-9]/g, '');
+
   if (cleanNumber) {
     upsertContact(cleanNumber, {});
 
@@ -146,6 +145,9 @@ async function _checkAutoReply(sock, msg, text, jid) {
 
   // Build conversation context for this sender
   const senderKey = (msg.key.participant || msg.key.remoteJid).replace('@s.whatsapp.net','').replace('@lid','');
+
+  // Update contact memory
+  const cleanNumber = senderKey.replace(/[^0-9]/g, '');
   global.dmHistory = global.dmHistory || {};
   global.dmHistory[senderKey] = global.dmHistory[senderKey] || [];
   global.dmPending = global.dmPending || {};
