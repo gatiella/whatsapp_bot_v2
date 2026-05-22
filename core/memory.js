@@ -34,9 +34,9 @@ function upsertContact(number, updates) {
       VALUES (?, ?, ?, ?, 1, '[]', 'neutral', 0, 0, 0, '[]', null)`
     ).run(number, updates.name || null, Date.now(), Date.now());
   } else {
-    const sets = Object.keys(updates).map(k => k + ' = ?').join(', ');
-    const vals = [...Object.values(updates), number];
-    db.prepare(`UPDATE contact_memory SET ${sets}, last_contact = ?, message_count = message_count + 1 WHERE number = ?`)
+    const extraSets = Object.keys(updates).map(k => k + ' = ?').join(', ');
+    const setSql = extraSets ? extraSets + ', last_contact = ?, message_count = message_count + 1' : 'last_contact = ?, message_count = message_count + 1';
+    db.prepare(`UPDATE contact_memory SET ${setSql} WHERE number = ?`)
       .run(...Object.values(updates), Date.now(), number);
   }
   return getContact(number);
