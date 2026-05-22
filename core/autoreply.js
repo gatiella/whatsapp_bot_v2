@@ -17,7 +17,7 @@ const { isNightModeActive } = require('../handlers/special');
 const MODELS = [
   'google/gemma-4-31b-it:free',
   'meta-llama/llama-3.2-3b-instruct:free',
-  'deepseek/deepseek-v4-flash:free',
+  'deepseek/deepseek-r1-0528:free',
 ];
 
 async function getAIReply(text, isNight = false, persona = null) {
@@ -197,7 +197,12 @@ async function _checkAutoReply(sock, msg, text, jid) {
 
   const contextPrompt = history ? `Conversation so far:\n${history}\n\nLatest: ${allPending}` : allPending;
   const finalReply = reply || await getAIReply(contextPrompt, isNight, dynamicPersona);
-  if (!finalReply) return;
+  if (!finalReply) {
+    const reactions = ["😂", "👀", "🔥", "💀", "😭", "👍", "🤔", "😅"];
+    const reaction = reactions[Math.floor(Math.random() * reactions.length)];
+    try { await sock.sendMessage(jid, { react: { text: reaction, key: msg.key } }); } catch {}
+    return;
+  }
 
   // Human quirks — sometimes do something unexpected instead of full reply
   const quirksRoll = Math.random();
