@@ -95,6 +95,8 @@ async function _checkAutoReply(sock, msg, text, jid) {
   const isEnabledGroup = jid.endsWith('@g.us') && global.enabledGroups?.[jid];
   if (isDM && process.env.AUTO_REPLY_DM !== 'true') return;
   if (!isDM && !isEnabledGroup) return;
+  const senderKey = (msg.key.participant || msg.key.remoteJid).replace("@s.whatsapp.net","").replace("@lid","");
+  const cleanNumber = senderKey.replace(/[^0-9]/g, "");
 
   const reply = getKeywordReply(text);
   const persona = global.personas?.[jid] || null;
@@ -144,10 +146,8 @@ async function _checkAutoReply(sock, msg, text, jid) {
   const contactContext = cleanNumber ? buildContactContext(cleanNumber) : null;
 
   // Build conversation context for this sender
-  const senderKey = (msg.key.participant || msg.key.remoteJid).replace('@s.whatsapp.net','').replace('@lid','');
 
   // Update contact memory
-  const cleanNumber = senderKey.replace(/[^0-9]/g, '');
   global.dmHistory = global.dmHistory || {};
   global.dmHistory[senderKey] = global.dmHistory[senderKey] || [];
   global.dmPending = global.dmPending || {};
