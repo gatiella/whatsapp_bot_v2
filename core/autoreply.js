@@ -1,5 +1,17 @@
 const { getKeywordReply } = require('../db/database');
-const { getContact, upsertContact, addTopic, buildContactContext } = require('./memory');
+let getContact, upsertContact, addTopic, buildContactContext;
+try {
+  const memory = require('./memory');
+  getContact = memory.getContact;
+  upsertContact = memory.upsertContact;
+  addTopic = memory.addTopic;
+  buildContactContext = memory.buildContactContext;
+} catch (e) {
+  getContact = () => null;
+  upsertContact = () => {};
+  addTopic = () => {};
+  buildContactContext = () => null;
+}
 const { isNightModeActive } = require('../handlers/special');
 
 const MODELS = [
@@ -39,6 +51,10 @@ async function getAIReply(text, isNight = false, persona = null) {
 }
 
 async function checkAutoReply(sock, msg, text, jid) {
+  try { return await _checkAutoReply(sock, msg, text, jid); } catch(e) { console.error('[AutoReply Error]', e.message); }
+}
+
+async function _checkAutoReply(sock, msg, text, jid) {
   // Ghost mode — read but never reply
   if (global.ghostMode?.[jid]) return;
 
