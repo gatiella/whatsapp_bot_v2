@@ -21,6 +21,18 @@ const MODELS = [
 ];
 
 async function getAIReply(text, isNight = false, persona = null) {
+  // Retry up to 3 models automatically
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const result = await _getAIReply(text, isNight, persona);
+      if (result) return result;
+    } catch {}
+    await new Promise(r => setTimeout(r, 1500));
+  }
+  return null;
+}
+
+async function _getAIReply(text, isNight = false, persona = null) {
   const nightPrompt = 'You are xssrat, a Kenyan freelance software engineer and ethical hacker in your 20s. PERSONALITY: You are funny 80% of the time, dry humor, wit, sarcasm when it fits. You match energy completely. You are confident, unbothered, never desperate or clingy. TEXTING STYLE: Raw text mostly, no punctuation sometimes, mix of English and Swahili but mostly English, UK slang when natural (innit, ngl, lowkey, deadass, no cap, bare, mad, sick, bruv, fam, say less, wagwan, peak, calm), short replies that match their energy, never over-text. BEHAVIOR: You ghost annoying or persistent people and give dry one word answers. You never explain yourself. TOPICS YOU LIKE: Tech, hacking, coding, money, business, real talk, funny stuff, Kenyan life, music. RULES: Never say you are a bot or AI. No emojis. No formal language. Never say how can I help you. Be real.';
   const dayPrompt = 'You are xssrat, a real Kenyan software engineer and ethical hacker in your 20s. You are friendly, caring, witty and helpful. Reply naturally like a real person texting on WhatsApp. Keep replies short - 1 to 2 sentences. Never say you are a bot or AI. Never mention commands or !help. If someone greets you greet back naturally. Reply in whatever language they use - English, Swahili, or mix. Sound like a real young person texting not a formal assistant.';
   const system = persona || (isNight ? nightPrompt : dayPrompt);
@@ -39,7 +51,7 @@ async function getAIReply(text, isNight = false, persona = null) {
             { role: 'system', content: system },
             { role: 'user', content: text }
           ],
-          max_tokens: 200,
+          max_tokens: 80,
         }),
       });
       const data = await response.json();
@@ -161,7 +173,20 @@ async function _checkAutoReply(sock, msg, text, jid) {
   global.dmPending[senderKey].push(text);
 
   // If already waiting to reply, let the pending queue handle it
-  if (global.dmPending[senderKey].length > 1) return;
+  if (global.dmPending[senderKey].length > 1) {
+    // Schedule a reply after 3s if we are the last message
+    setTimeout(async () => {
+      if (global.dmPending[senderKey]?.length > 0) {
+        const pending = global.dmPending[senderKey].join(' | ');
+        global.dmPending[senderKey] = [];
+        try {
+          const r = await getAIReply(pending, isNightModeActive(jid), null);
+          if (r) await sock.sendMessage(jid, { text: r });
+        } catch {}
+      }
+    }, 4000);
+    return;
+  }
 
   // Wait a moment to catch rapid messages
   await new Promise(r => setTimeout(r, 3000));
@@ -178,7 +203,11 @@ async function _checkAutoReply(sock, msg, text, jid) {
   const history = global.dmHistory[senderKey].slice(-8).map(h => `${h.role === 'user' ? 'Them' : 'You'}: ${h.content}`).join('\n');
 
   // Build dynamic system prompt based on detected tone
-  let dynamicPersona = persona || 'You are xssrat, a real Kenyan software engineer in your 20s. Mature, calm, direct, no emojis, no formal language. Never reveal you are a bot.';
+  // Time of day context
+  const hour = new Date().getHours();
+  const timeContext = hour < 6 ? 'very late night, you are probably half asleep' : hour < 10 ? 'morning, you just woke up' : hour < 13 ? 'mid morning' : hour < 17 ? 'afternoon' : hour < 21 ? 'evening' : 'night, winding down';
+
+  let dynamicPersona = persona || `You are xssrat, a Kenyan freelance software engineer and ethical hacker in your 20s. You are funny 80% of the time, dry humor, wit, sarcasm when it fits. You match energy completely. Confident, unbothered. Raw text, no emojis, mix of English and Swahili but mostly English, UK slang naturally (ngl, lowkey, deadass, no cap, say less, bet, fr, innit, bruv, fam). Short replies matching their energy. Ghost annoying people with dry one word answers. Never say you are a bot or AI. Never be formal. Current time context: ${timeContext}.`;
 
   if (isUpset) {
     dynamicPersona += ' This person seems upset or going through something hard. Be extra caring, warm and supportive. Listen more than you talk. Show genuine empathy without being over the top.';
@@ -198,9 +227,10 @@ async function _checkAutoReply(sock, msg, text, jid) {
   const contextPrompt = history ? `Conversation so far:\n${history}\n\nLatest: ${allPending}` : allPending;
   const finalReply = reply || await getAIReply(contextPrompt, isNight, dynamicPersona);
   if (!finalReply) {
-    const reactions = ["😂", "👀", "🔥", "💀", "😭", "👍", "🤔", "😅"];
-    const reaction = reactions[Math.floor(Math.random() * reactions.length)];
-    try { await sock.sendMessage(jid, { react: { text: reaction, key: msg.key } }); } catch {}
+    // AI failed — send a human fallback text instead of emoji
+    const fallbacks = ['yeah', 'lol', 'fr', 'ok', 'ngl', 'true', 'bet', 'say less'];
+    const fb = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    try { await sock.sendMessage(jid, { text: fb }); } catch {}
     return;
   }
 
@@ -208,7 +238,7 @@ async function _checkAutoReply(sock, msg, text, jid) {
   const quirksRoll = Math.random();
 
   // 8% chance — react with emoji only, no text reply
-  if (quirksRoll < 0.08) {
+  if (quirksRoll < 0.03) {
     const reactions = ['😂', '😮', '👀', '🔥', '💀', '😭', '🤣', '👍', '😅', '🤔'];
     const reaction = reactions[Math.floor(Math.random() * reactions.length)];
     try {
@@ -220,8 +250,8 @@ async function _checkAutoReply(sock, msg, text, jid) {
   }
 
   // 10% chance — one word reply then go silent
-  if (quirksRoll < 0.18) {
-    const oneWords = ['haha', 'damn', 'lol', 'wow', 'sawa', 'true', 'facts', 'nah', 'yeah', 'maze', 'kweli', 'interesting', 'noted', 'ok', 'ehe'];
+  if (quirksRoll < 0.08) {
+    const oneWords = ['lol', 'facts', 'ngl', 'lowkey', 'bet', 'say less', 'nah', 'yeah', 'true', 'deadass', 'fr', 'wild', 'innit', 'sawa', 'maze', 'kweli'];
     const word = oneWords[Math.floor(Math.random() * oneWords.length)];
     const shortDelay = Math.floor(Math.random() * 60000) + 15000;
     await new Promise(r => setTimeout(r, shortDelay));
@@ -234,14 +264,14 @@ async function _checkAutoReply(sock, msg, text, jid) {
   }
 
   // 7% chance — voice note placeholder
-  if (quirksRoll < 0.25) {
+  if (quirksRoll < 0.11) {
     const voiceNotes = [
-      "couldn't type rn but basically yeah",
-      "maze si rahisi kuandika, but basically niko sawa",
-      "long story, but the short version is yeah",
-      "hard to explain in text but basically same",
-      "niko busy but basically sawa tu",
-      "couldn't type, but you get the point",
+      "couldn't type but basically yeah",
+      "long story short, yeah",
+      "niko busy but basically sawa",
+      "hard to explain in text ngl",
+      "you get the point",
+      "will explain later",
     ];
     const vn = voiceNotes[Math.floor(Math.random() * voiceNotes.length)];
     const vnDelay = Math.floor(Math.random() * 90000) + 20000;
