@@ -51,7 +51,7 @@ async function _getAIReply(text, isNight = false, persona = null) {
             { role: 'system', content: system },
             { role: 'user', content: text }
           ],
-          max_tokens: 80,
+          max_tokens: 150,
         }),
       });
       const data = await response.json();
@@ -224,7 +224,9 @@ async function _checkAutoReply(sock, msg, text, jid) {
     dynamicPersona += ' CONTACT MEMORY: ' + contactContext;
   }
 
-  const contextPrompt = history ? `Conversation so far:\n${history}\n\nLatest: ${allPending}` : allPending;
+  const contextPrompt = history 
+    ? `This is a WhatsApp conversation. Conversation so far:\n${history}\n\nTheir latest message: "${allPending}"\n\nReply naturally and directly to what they just said. Stay on topic. Do not ignore their message.`
+    : `Their message: "${allPending}". Reply naturally and directly.`;
   const finalReply = reply || await getAIReply(contextPrompt, isNight, dynamicPersona);
   if (!finalReply) {
     // AI failed — send a human fallback text instead of emoji
@@ -238,7 +240,7 @@ async function _checkAutoReply(sock, msg, text, jid) {
   const quirksRoll = Math.random();
 
   // 8% chance — react with emoji only, no text reply
-  if (quirksRoll < 0.03) {
+  if (quirksRoll < 0.02) {
     const reactions = ['😂', '😮', '👀', '🔥', '💀', '😭', '🤣', '👍', '😅', '🤔'];
     const reaction = reactions[Math.floor(Math.random() * reactions.length)];
     try {
@@ -250,7 +252,7 @@ async function _checkAutoReply(sock, msg, text, jid) {
   }
 
   // 10% chance — one word reply then go silent
-  if (quirksRoll < 0.08) {
+  if (false) {
     const oneWords = ['lol', 'facts', 'ngl', 'lowkey', 'bet', 'say less', 'nah', 'yeah', 'true', 'deadass', 'fr', 'wild', 'innit', 'sawa', 'maze', 'kweli'];
     const word = oneWords[Math.floor(Math.random() * oneWords.length)];
     const shortDelay = Math.floor(Math.random() * 60000) + 15000;
@@ -264,7 +266,7 @@ async function _checkAutoReply(sock, msg, text, jid) {
   }
 
   // 7% chance — voice note placeholder
-  if (quirksRoll < 0.11) {
+  if (false) {
     const voiceNotes = [
       "couldn't type but basically yeah",
       "long story short, yeah",
