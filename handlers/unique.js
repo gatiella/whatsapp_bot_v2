@@ -32,9 +32,9 @@ const { safeSend } = require('../utils/send');
 
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
 const MODELS = [
+  'openai/gpt-oss-120b:free',
+  'nvidia/nemotron-3-super-120b-a12b:free',
   'google/gemma-4-31b-it:free',
-  'meta-llama/llama-3.2-3b-instruct:free',
-  'deepseek/deepseek-v4-flash:free',
 ];
 
 async function askAI(prompt, system) {

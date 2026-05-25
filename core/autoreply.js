@@ -15,9 +15,9 @@ try {
 const { isNightModeActive } = require('../handlers/special');
 
 const MODELS = [
+  'openai/gpt-oss-120b:free',
+  'nvidia/nemotron-3-super-120b-a12b:free',
   'google/gemma-4-31b-it:free',
-  'meta-llama/llama-3.2-3b-instruct:free',
-  'deepseek/deepseek-r1-0528:free',
 ];
 
 async function getAIReply(text, isNight = false, persona = null) {
