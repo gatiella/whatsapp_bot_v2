@@ -1,4 +1,4 @@
-const { getMessageText, getJID, react } = require('../utils/helpers');
+const { getMessageText, getMessageType, getJID, react } = require('../utils/helpers');
 const { handleBasic } = require('./basic');
 const { handleGroup } = require('./group');
 const { handleMedia } = require('./media');
@@ -27,7 +27,27 @@ async function dispatchCommand(sock, msg, store) {
   const sender = msg.key.participant || msg.key.remoteJid;
   const senderNumber = sender.replace('@lid', '').replace(/[^0-9]/g, '') || msg.key.remoteJid.replace(/[^0-9]/g, '');
 
-  if (!text) return;
+  const msgType = getMessageType(msg);
+
+  // For DMs only — handle media messages with a synthetic text so autoreply can respond
+  if (!text) {
+    if (!isGroup && msgType && msgType !== 'text') {
+      const mediaTexts = {
+        voice: 'sent a voice note',
+        audio: 'sent an audio file',
+        image: 'sent a photo',
+        video: 'sent a video',
+        sticker: 'sent a sticker',
+        document: 'sent a document',
+      };
+      const syntheticText = mediaTexts[msgType] || null;
+      if (syntheticText) {
+        console.log("[DEBUG] msg from:", sender, "jid:", jid, "type:", msgType);
+        await checkAutoReply(sock, msg, syntheticText, jid);
+      }
+    }
+    return;
+  }
   console.log("[DEBUG] msg from:", sender, "jid:", jid, "text:", text);
 
   // Block all group messages unless group is explicitly enabled

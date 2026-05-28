@@ -18,6 +18,17 @@ function getMessageText(msg) {
   );
 }
 
+function getMessageType(msg) {
+  if (!msg.message) return null;
+  if (msg.message.conversation || msg.message.extendedTextMessage) return 'text';
+  if (msg.message.imageMessage) return 'image';
+  if (msg.message.videoMessage) return 'video';
+  if (msg.message.audioMessage) return msg.message.audioMessage.ptt ? 'voice' : 'audio';
+  if (msg.message.stickerMessage) return 'sticker';
+  if (msg.message.documentMessage) return 'document';
+  return null;
+}
+
 function getMentioned(msg) {
   return msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
 }
@@ -35,4 +46,4 @@ function sleep(ms) {
   return new Promise(res => setTimeout(res, ms));
 }
 
-module.exports = { getJID, getMessageText, getMentioned, react, sleep };
+module.exports = { getJID, getMessageText, getMessageType, getMentioned, react, sleep };

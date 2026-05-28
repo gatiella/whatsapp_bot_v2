@@ -62,29 +62,57 @@ function addNote(number, note) {
   db.prepare('UPDATE contact_memory SET notes = ? WHERE number = ?').run(JSON.stringify(notes), number);
 }
 
+function getRelationshipTier(contact) {
+  const count = contact.message_count || 0;
+  const daysSinceFirst = Math.floor((Date.now() - contact.first_contact) / 86400000);
+
+  if (count >= 100 || (count >= 50 && daysSinceFirst >= 14)) return 'close';
+  if (count >= 20 || (count >= 10 && daysSinceFirst >= 7)) return 'acquaintance';
+  if (count >= 5) return 'known';
+  return 'stranger';
+}
+
 function buildContactContext(number) {
   const contact = getContact(number);
   if (!contact) return null;
 
   const topics = JSON.parse(contact.topics || '[]');
   const notes = JSON.parse(contact.notes || '[]');
-  const daysSinceFirst = Math.floor((Date.now() - contact.first_contact) / 86400000);
   const daysSinceLast = Math.floor((Date.now() - contact.last_contact) / 86400000);
-  const isNew = contact.message_count <= 2;
-  const isRegular = contact.message_count > 20;
   const beenAwhile = daysSinceLast > 3;
+  const tier = getRelationshipTier(contact);
 
   let context = '';
 
   if (contact.name) context += `Their name is ${contact.name}. `;
-  if (isNew) context += 'This is one of the first times they are texting you. ';
-  if (isRegular) context += `You text regularly, they have sent ${contact.message_count} messages. `;
-  if (beenAwhile) context += `They have not texted in ${daysSinceLast} days, so reference it naturally like "been a minute" or "where you been". `;
-  if (topics.length) context += `Topics you have discussed: ${topics.join(', ')}. Reference these naturally when relevant. `;
-  if (contact.is_flirty) context += 'This person tends to flirt, match that energy subtly. ';
-  if (contact.is_annoying) context += 'This person can be annoying or needy. Keep replies shorter and drier. ';
-  if (contact.is_bot_tester) context += 'This person has tried to test if you are a bot before. Be extra natural and deflect any bot questions with humor. ';
-  if (notes.length) context += `Things to remember: ${notes.map(n => n.note).join(', ')}. `;
+
+  // Relationship tier — shapes tone of entire reply
+  if (tier === 'stranger') {
+    context += 'You barely know this person, only a few messages exchanged. Be normal but a bit measured, not too open, not cold. Short replies. ';
+  } else if (tier === 'known') {
+    context += 'You know this person a little, maybe 5-15 messages shared. Relaxed but not fully open yet. Normal conversational tone. ';
+  } else if (tier === 'acquaintance') {
+    context += 'You know this person decently well. Be relaxed, can joke around, reference things you have discussed before. ';
+  } else if (tier === 'close') {
+    context += 'This is someone you talk to regularly and know well. Be fully yourself — jokes, banter, slang, references to past convos, zero formality. Treat them like a real friend. ';
+  }
+
+  if (beenAwhile) context += `They have not texted in ${daysSinceLast} days, so acknowledge it naturally like "been a minute" or "where you been". `;
+  if (topics.length) {
+    context += `Topics you have talked about before: ${topics.join(', ')}. `;
+    if (tier === 'close' || tier === 'acquaintance') {
+      const recentTopic = topics[topics.length - 1];
+      context += `If what they say connects to any of those topics, bring it up naturally like a real friend would. `;
+      context += `The most recent topic was "${recentTopic}" — if there is a natural opening, reference it casually without forcing it. `;
+    }
+    if (tier === 'close') {
+      context += 'You know this person well enough to randomly bring up a shared topic even if they did not mention it — like texting a friend you know watches football and asking if they saw the game. Only do this if their message is short or low effort and you need something to say. ';
+    }
+  }
+  if (contact.is_flirty) context += 'This person tends to flirt. Match that energy subtly, be charming but natural. ';
+  if (contact.is_annoying) context += 'This person can be annoying or needy. Keep replies shorter and drier, do not over-engage. ';
+  if (contact.is_bot_tester) context += 'This person has tried to test if you are a bot. Be extra human, deflect any AI questions with dry confident humor — never admit anything. ';
+  if (notes.length) context += `Things to remember about them: ${notes.map(n => n.note).join(', ')}. `;
   if (contact.summary) context += `Summary of past conversations: ${contact.summary}. `;
 
   return context;
