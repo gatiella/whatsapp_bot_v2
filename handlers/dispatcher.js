@@ -21,6 +21,9 @@ const config = require('../config');
 const PREFIX = config.PREFIX || '!';
 
 async function dispatchCommand(sock, msg, store) {
+  // Never process own outgoing messages — prevents double send loop
+  if (msg.key.fromMe) return;
+
   const jid = getJID(msg);
   const text = getMessageText(msg);
   const isGroup = jid.endsWith('@g.us');

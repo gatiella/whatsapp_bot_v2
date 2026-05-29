@@ -463,11 +463,12 @@ MEDIA HANDLING: If the message says they sent a voice note — respond naturally
   if (quirksRoll < vnThreshold) {
     const voiceNotes = [
       "couldn't type but basically yeah",
-      "long story short, yeah",
-      "niko busy but basically sawa",
+      "long story short yeah",
       "hard to explain in text ngl",
       "you get the point",
       "will explain later",
+      "basically yeah",
+      "more or less",
     ];
     const vn = voiceNotes[Math.floor(Math.random() * voiceNotes.length)];
     const vnDelay = tierForTiming === 'close'
