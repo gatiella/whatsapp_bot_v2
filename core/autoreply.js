@@ -253,13 +253,18 @@ async function _checkAutoReply(sock, msg, text, jid) {
 
   // If already waiting to reply, let the pending queue handle it
   if (global.dmPending[senderKey].length > 1) {
-    // Schedule a reply after 3s if we are the last message
     setTimeout(async () => {
       if (global.dmPending[senderKey]?.length > 0) {
         const pending = global.dmPending[senderKey].join(' | ');
         global.dmPending[senderKey] = [];
         try {
-          const r = await getAIReply(pending, isNightModeActive(jid), null);
+          // Build full history context for pending queue too — not just raw text
+          const pendingHistory = global.dmHistory[senderKey].slice(-12)
+            .map(h => `${h.role === 'user' ? 'Them' : 'You'}: ${h.content}`).join('\n');
+          const pendingPrompt = pendingHistory
+            ? `This is a WhatsApp conversation. Conversation so far:\n${pendingHistory}\n\nTheir latest message: "${pending}"\n\nReply directly to what they just said, staying on topic with the conversation.`
+            : `Their message: "${pending}". Reply directly to this.`;
+          const r = await getAIReply(pendingPrompt, isNightModeActive(jid), dynamicPersona);
           if (r) await sock.sendMessage(jid, { text: r });
         } catch {}
       }
@@ -301,7 +306,7 @@ async function _checkAutoReply(sock, msg, text, jid) {
   ];
   const casualSignals = [
     'lol', 'haha', 'bro', 'fam', 'ngl', 'lowkey', 'fr', 'bet', 'nah', 'yoo', 'aye',
-    'bruh', 'sawa', 'maze', 'si', 'kwani', 'aki', 'bana', 'niaje', 'poa', 'fiti'
+    'bruh', 'yolo', 'sheesh', 'no cap', 'deadass', 'sus', 'bussin', 'fam'
   ];
   const formalScore = formalSignals.filter(w => allPending.toLowerCase().includes(w)).length;
   const casualScore = casualSignals.filter(w => allPending.toLowerCase().includes(w)).length;
@@ -380,8 +385,8 @@ MEDIA HANDLING: If the message says they sent a voice note — respond naturally
     : 'Reply naturally and directly to what they said. Stay on topic.';
 
   const contextPrompt = history
-    ? `This is a WhatsApp conversation. Conversation so far:\n${history}\n\nTheir latest message: "${allPending}"\n\n${energyInstruction}`
-    : `Their message: "${allPending}". ${energyInstruction}`;
+    ? `This is a WhatsApp conversation. Read the full history carefully before replying.\n\nConversation so far:\n${history}\n\nTheir latest message: "${allPending}"\n\n${energyInstruction}\n\nCRITICAL: Reply ONLY to what they just said. Stay on the same topic as the conversation. Never switch topics randomly. Never greet mid-conversation. Never say niaje or hey or hi unless this is the very first message.`
+    : `Their message: "${allPending}". ${energyInstruction} Reply directly to this specific message.`; 
   const finalReply = reply || await getAIReply(contextPrompt, isNight, dynamicPersona);
   if (!finalReply) {
     // AI failed — send a human fallback text instead of emoji
@@ -430,12 +435,14 @@ MEDIA HANDLING: If the message says they sent a voice note — respond naturally
     return;
   }
 
-  // One word reply — 12% close friends, 6% acquaintance, 3% others
-  const oneWordThreshold = tierForTiming === 'close' ? 0.14
+  // One word reply — never fire if message is a direct question
+  const isQuestion = allPending.trim().endsWith('?') || 
+    /^(what|which|who|where|when|why|how|are you|do you|did you|can you|is it|was it)/i.test(allPending.trim());
+  const oneWordThreshold = isQuestion ? -1 : tierForTiming === 'close' ? 0.14
     : tierForTiming === 'acquaintance' ? 0.08
     : 0.04;
   if (quirksRoll < oneWordThreshold) {
-    const oneWords = ['lol', 'facts', 'ngl', 'lowkey', 'bet', 'say less', 'nah', 'yeah', 'true', 'deadass', 'fr', 'wild', 'innit', 'sawa', 'maze', 'kweli'];
+    const oneWords = ['lol', 'facts', 'ngl', 'lowkey', 'bet', 'say less', 'nah', 'yeah', 'true', 'deadass', 'fr', 'wild', 'innit', 'ok', 'fair'];
     const word = oneWords[Math.floor(Math.random() * oneWords.length)];
     const shortDelay = tierForTiming === 'close'
       ? Math.floor(Math.random() * 8000) + 2000
