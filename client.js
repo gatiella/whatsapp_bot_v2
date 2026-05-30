@@ -163,7 +163,7 @@ async function startBot() {
         }
       }
 
-      if (msg.key.fromMe && !msg.key.remoteJid.endsWith('@g.us') && !msg.key.remoteJid.endsWith('@lid')) continue;
+      if (msg.key.fromMe) continue; // Never process own outgoing messages
       try {
         await dispatchCommand(sock, msg);
       } catch (err) {
