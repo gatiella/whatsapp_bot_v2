@@ -50,13 +50,13 @@ async function handleBasic(sock, msg, cmd, args) {
     case 'info':
       await safeSend(sock, jid, {
         text: '╔═══════════════════╗\n' +
-              '║   🤖 *xssrat Bot v2.0*   ║\n' +
+              '║   🤖 *Gatiella Bot v2.0*   ║\n' +
               '╚═══════════════════╝\n\n' +
               '│ 🔧 Prefix: *' + P + '*\n' +
               '│ 💻 Node.js + Baileys\n' +
               '│ ⚡ Commands: *100+*\n' +
               '│ 🤖 AI: OpenRouter\n' +
-              '│ 👑 Owner: xssrat\n\n' +
+              '│ 👑 Owner:* Gatiella\n\n' +
               'Type *' + P + 'menu* for all commands.',
       });
       break;
@@ -65,7 +65,7 @@ async function handleBasic(sock, msg, cmd, args) {
       const P = config.PREFIX || '!';
       await safeSend(sock, jid, {
         text:
-          '░▒▓█ 🤖 *xssrat Bot v2.0* █▓▒░\n' +
+          '░▒▓█ 🤖 *Gatiella Bot v2.0* █▓▒░\n' +
           '▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n\n' +
 
           '🔧 *BASIC*\n' +
@@ -153,7 +153,7 @@ async function handleBasic(sock, msg, cmd, args) {
     case 'menu_text': {
       await safeSend(sock, jid, {
         text:
-          '░▒▓█ 🤖 *xssrat Bot v2.0* █▓▒░\n' +
+          '░▒▓█ 🤖 *Gatiella Bot v2.0* █▓▒░\n' +
           '▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n\n' +
 
           '🔧 *BASIC*\n' +
