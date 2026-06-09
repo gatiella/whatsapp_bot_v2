@@ -13,8 +13,11 @@ const { restoreSchedules } = require('./handlers/productivity');
 const { scheduleDelete, cancelDelete } = require('./core/autodelete');
 const logger = require('./utils/logger');
 
-async function startBot() {
-  const { state, saveCreds } = await useMultiFileAuthState('auth_info');
+async function startInstance(config = {}) {
+  const authFolder = config.authFolder || 'auth_info';
+  const ownerNumber = config.ownerNumber || process.env.OWNER_NUMBER || '';
+  const label = config.label || 'Bot';
+  const { state, saveCreds } = await useMultiFileAuthState(authFolder);
   const { version } = await fetchLatestBaileysVersion();
 
   const sock = makeWASocket({
@@ -32,7 +35,7 @@ async function startBot() {
       pairingCodeRequested = true;
       await new Promise(r => setTimeout(r, 3000));
       try {
-        const number = process.env.OWNER_NUMBER.replace(/[^0-9]/g, '');
+        const number = ownerNumber.replace(/[^0-9]/g, '');
         console.log('\nRequesting pairing code for: ' + number);
         const code = await sock.requestPairingCode(number);
         console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -46,13 +49,13 @@ async function startBot() {
     if (connection === 'close') {
       const shouldReconnect =
         new Boom(lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-      if (shouldReconnect) setTimeout(() => startBot(), 15000);
+      if (shouldReconnect) setTimeout(() => startInstance(config), 15000);
       else logger.error('Logged out. Delete auth_info and restart.');
     }
     if (connection === 'open') {
-      logger.info('✅ xssrat bot connected!');
+      logger.info(`✅ ${label} connected!`);
       restoreSchedules(sock);
-      runScheduler(sock);
+      if (label === 'Bot1') { logger.info('⏰ Scheduler running'); runScheduler(sock); }
     }
   });
 
@@ -269,4 +272,4 @@ async function startBot() {
 return sock;
 }
 
-module.exports = { startBot };
+module.exports = { startInstance, startBot: startInstance };
