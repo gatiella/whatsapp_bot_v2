@@ -398,7 +398,7 @@ MEDIA HANDLING: If the message says they sent a voice note — respond naturally
     : 'Reply naturally and directly to what they said. Stay on topic.';
 
   const contextPrompt = history
-    ? `This is a WhatsApp conversation. Read the full history carefully before replying.\n\nConversation so far:\n${history}\n\nTheir latest message: "${allPending}"\n\n${energyInstruction}\n\nCRITICAL: Reply ONLY to what they just said. Stay on the same topic as the conversation. Never switch topics randomly. Never greet mid-conversation. Never say niaje or hey or hi unless this is the very first message.`
+    ? `This is a WhatsApp conversation. Read the full history carefully before replying.\n\nConversation so far:\n${history}\n\nTheir latest message: "${allPending}"\n\n${energyInstruction}\n\nCRITICAL: Reply ONLY to what they just said. Stay on the same topic as the conversation. Never switch topics randomly. Never greet mid-conversation. Never greet mid-conversation unless this is the very first message.`
     : `Their message: "${allPending}". ${energyInstruction} Reply directly to this specific message.`; 
   const finalReply = reply || await getAIReply(contextPrompt, isNight, dynamicPersona);
   if (!finalReply) {
